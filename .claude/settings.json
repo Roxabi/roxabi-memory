@@ -1,0 +1,24 @@
+{
+  "enabledPlugins": {
+    "dev-core@roxabi-marketplace": true,
+    "compress@roxabi-marketplace": true,
+    "1b1@roxabi-marketplace": true,
+    "context7-plugin@context7-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "roxabi-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "Roxabi/roxabi-plugins"
+      },
+      "autoUpdate": true
+    },
+    "context7-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "upstash/context7"
+      },
+      "autoUpdate": true
+    }
+  }
+}

@@ -1,0 +1,50 @@
+# .claude/stack.yml — dev-core stack configuration
+# DO NOT commit this file. Add `.claude/stack.yml` to .gitignore.
+# Commit stack.yml.example instead (no sensitive values).
+
+schema_version: "1.0"
+
+runtime: python
+package_manager: uv
+
+backend:
+  framework: none
+  orm: none
+  path: .
+
+frontend:
+  framework: none
+  path: ""
+
+build:
+  orchestrator: none
+  formatter: ruff
+  formatter_fix_cmd: "uv run ruff format ."
+
+testing:
+  unit: pytest
+  e2e: none
+
+hooks:
+  tool: auto
+
+deploy:
+  platform: none
+
+docs:
+  framework: none
+  path: ""
+  format: md
+
+commands:
+  test: uv run pytest
+  lint: "uv run ruff check ."
+  typecheck: ""
+  format: "uv run ruff format ."
+  install: uv sync
+
+artifacts:
+  analyses: artifacts/analyses
+  specs: artifacts/specs
+  frames: artifacts/frames
+  plans: artifacts/plans

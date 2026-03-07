@@ -1,7 +1,6 @@
 """Tests for roxabi_memory.async_db — AsyncMemoryDB (S2)."""
 from __future__ import annotations
 
-import asyncio
 import time
 
 import pytest

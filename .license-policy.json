@@ -1,0 +1,4 @@
+{
+  "allowlist": ["packaging", "typing_extensions"],
+  "overrides": {}
+}

@@ -1,7 +1,6 @@
 """Tests for roxabi_memory.schema — migrate() and schema correctness."""
 import sqlite3
 
-import pytest
 
 from roxabi_memory.schema import TARGET_VERSION, migrate
 
