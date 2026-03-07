@@ -126,14 +126,19 @@ def search_entries(
 
 @app.command("get")
 def get_entry(
-    id: Annotated[int, typer.Argument(help="Entry ID.")],
+    id: Annotated[str, typer.Argument(help="Entry ID.")],
 ) -> None:
     """Get a single memory entry by ID."""
+    try:
+        entry_id = int(id)
+    except ValueError:
+        err_console.print(f"Invalid ID: {id!r} is not an integer.")
+        raise typer.Exit(code=1)
     with MemoryDB(state.db_path) as db:
-        entry = db.get_entry(id)
+        entry = db.get_entry(entry_id)
 
     if entry is None:
-        err_console.print(f"Entry {id} not found.")
+        err_console.print(f"Entry {entry_id} not found.")
         raise typer.Exit(code=1)
 
     if state.as_json:
@@ -187,21 +192,26 @@ def put_entry(
 
 @app.command("delete")
 def delete_entry(
-    id: Annotated[int, typer.Argument(help="Entry ID to delete.")],
+    id: Annotated[str, typer.Argument(help="Entry ID to delete.")],
     yes: Annotated[
         bool,
         typer.Option("--yes", "-y", is_flag=True, help="Skip confirmation prompt."),
     ] = False,
 ) -> None:
     """Delete a memory entry by ID."""
+    try:
+        entry_id = int(id)
+    except ValueError:
+        err_console.print(f"Invalid ID: {id!r} is not an integer.")
+        raise typer.Exit(code=1)
     if not yes:
-        typer.confirm(f"Delete entry {id}?", abort=True)
+        typer.confirm(f"Delete entry {entry_id}?", abort=True)
     with MemoryDB(state.db_path) as db:
-        deleted = db.delete_entry(id)
+        deleted = db.delete_entry(entry_id)
     if deleted:
-        typer.echo(f"Deleted entry {id}.")
+        typer.echo(f"Deleted entry {entry_id}.")
     else:
-        err_console.print(f"Entry {id} not found.")
+        err_console.print(f"Entry {entry_id} not found.")
         raise typer.Exit(code=1)
 
 

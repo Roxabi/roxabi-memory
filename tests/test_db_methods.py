@@ -143,6 +143,15 @@ def test_list_entries_no_limit(db: MemoryDB) -> None:
     assert len(results) == 3
 
 
+def test_list_entries_offset_without_limit_raises(db: MemoryDB) -> None:
+    # Arrange
+    db.save_entry("entry")
+
+    # Act / Assert — offset without limit is invalid
+    with pytest.raises(ValueError, match="offset requires limit"):
+        db.list_entries(limit=None, offset=5)
+
+
 # ---------------------------------------------------------------------------
 # get_stats
 # ---------------------------------------------------------------------------

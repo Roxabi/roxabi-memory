@@ -143,6 +143,15 @@ def test_get_not_found(db_path: str) -> None:
     assert result.exit_code == 1
 
 
+def test_get_invalid_id(db_path: str) -> None:
+    # Arrange / Act — non-integer ID
+    result = runner.invoke(app, ["--db", db_path, "get", "abc"])
+
+    # Assert
+    assert result.exit_code == 1
+    assert "not an integer" in result.output.lower()
+
+
 def test_get_json(db_path: str) -> None:
     # Arrange / Act
     result = runner.invoke(app, ["--db", db_path, "--json", "get", "1"])
@@ -253,6 +262,26 @@ def test_delete_not_found(db_path: str) -> None:
 
     # Assert
     assert result.exit_code == 1
+
+
+def test_delete_confirm_yes(db_path: str) -> None:
+    # Arrange / Act — no --yes, simulate user typing "y"
+    result = runner.invoke(app, ["--db", db_path, "delete", "1"], input="y\n")
+
+    # Assert
+    assert result.exit_code == 0
+    with MemoryDB(db_path) as db:
+        assert db.get_entry(1) is None
+
+
+def test_delete_confirm_no(db_path: str) -> None:
+    # Arrange / Act — no --yes, simulate user typing "n"
+    result = runner.invoke(app, ["--db", db_path, "delete", "1"], input="n\n")
+
+    # Assert — entry should still exist
+    assert result.exit_code != 0
+    with MemoryDB(db_path) as db:
+        assert db.get_entry(1) is not None
 
 
 # ---------------------------------------------------------------------------

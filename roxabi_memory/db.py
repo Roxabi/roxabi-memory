@@ -118,6 +118,8 @@ class MemoryDB:
         limit: int | None = 50,
         offset: int = 0,
     ) -> list[MemoryEntry]:
+        if limit is None and offset:
+            raise ValueError("offset requires limit")
         conn = self._conn_or_raise()
         sql = "SELECT * FROM entries WHERE 1=1"
         params: list[object] = []
