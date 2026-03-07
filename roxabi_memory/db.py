@@ -48,10 +48,15 @@ class MemoryDB:
     def __exit__(self, *_: object) -> None:
         self.close()
 
-    def _conn_or_raise(self) -> sqlite3.Connection:
+    @property
+    def connection(self) -> sqlite3.Connection:
+        """Expose the raw connection for advanced consumers (e.g. shared-connection adapters)."""
         if self._conn is None:
             raise RuntimeError("MemoryDB not connected — call connect() first")
         return self._conn
+
+    def _conn_or_raise(self) -> sqlite3.Connection:
+        return self.connection
 
     def save_entry(
         self,
