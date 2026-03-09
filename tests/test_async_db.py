@@ -97,6 +97,33 @@ async def test_upsert_session_updates_not_duplicates(db: AsyncMemoryDB) -> None:
 
 
 # ---------------------------------------------------------------------------
+# T-12-x: metadata validation
+# ---------------------------------------------------------------------------
+
+
+async def test_save_entry_dict_metadata(db: AsyncMemoryDB) -> None:
+    """save_entry accepts a dict and stores it as JSON."""
+    # Arrange / Act
+    await db.save_entry("with meta", metadata={"key": "value"})
+
+    # Assert
+    results = await db.search("with meta", namespace="vault")
+    assert results
+    import json
+
+    meta = json.loads(results[0]["metadata"])
+    assert meta == {"key": "value"}
+
+
+async def test_save_entry_rejects_non_serializable_metadata(
+    db: AsyncMemoryDB,
+) -> None:
+    """save_entry raises ValueError when metadata contains non-serializable values."""
+    with pytest.raises(ValueError, match="not JSON-serializable"):
+        await db.save_entry("bad meta", metadata={"bad": object()})
+
+
+# ---------------------------------------------------------------------------
 # T-12-5: Namespace isolation — 'other' not visible to 'lyra'
 # ---------------------------------------------------------------------------
 

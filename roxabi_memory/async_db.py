@@ -1,6 +1,7 @@
 """Async (aiosqlite) interface for roxabi-memory."""
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -60,14 +61,18 @@ class AsyncMemoryDB:
         title: str = "",
         category: str = "general",
         namespace: str = "vault",
-        metadata: str = "{}",
+        metadata: dict[str, Any] | None = None,
     ) -> int:
         """Insert an entry and return its new id (lastrowid)."""
         db = self._db_or_raise()
+        try:
+            metadata_str = json.dumps(metadata or {})
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"metadata is not JSON-serializable: {exc}") from exc
         cur = await db.execute(
             "INSERT INTO entries (category, type, title, content, namespace, metadata)"
             " VALUES (?, ?, ?, ?, ?, ?)",
-            (category, type, title or content[:80], content, namespace, metadata),
+            (category, type, title or content[:80], content, namespace, metadata_str),
         )
         await db.commit()
         assert cur.lastrowid is not None
@@ -83,8 +88,6 @@ class AsyncMemoryDB:
 
         Returns the entry id.
         """
-        import json
-
         db = self._db_or_raise()
 
         # Look up existing session entry by session_id stored in metadata JSON.

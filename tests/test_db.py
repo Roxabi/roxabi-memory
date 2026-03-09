@@ -92,6 +92,22 @@ def test_save_entry_defaults(db: MemoryDB) -> None:
     assert entry.metadata == "{}"
 
 
+def test_save_entry_dict_metadata(db: MemoryDB) -> None:
+    """save_entry accepts a dict and stores it as JSON."""
+    # Arrange / Act
+    entry = db.save_entry("with meta", metadata={"key": "value", "n": 42})
+
+    # Assert
+    assert entry.metadata == '{"key": "value", "n": 42}'
+
+
+def test_save_entry_rejects_non_serializable_metadata(db: MemoryDB) -> None:
+    """save_entry raises ValueError when metadata contains non-serializable values."""
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError, match="not JSON-serializable"):
+        db.save_entry("bad meta", metadata={"bad": object()})
+
+
 def test_not_connected_raises(tmp_path) -> None:
     """Calling save_entry before connect() must raise RuntimeError."""
     # Arrange

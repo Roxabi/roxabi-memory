@@ -1,6 +1,8 @@
 """Namespace-scoped read/write wrappers for AsyncMemoryDB."""
 from __future__ import annotations
 
+from typing import Any
+
 from .async_db import AsyncMemoryDB
 
 
@@ -27,7 +29,7 @@ class NamespacedWriter:
         content: str,
         type: str = "note",
         title: str = "",
-        metadata: str = "{}",
+        metadata: dict[str, Any] | None = None,
     ) -> int:
         return await self._db.save_entry(
             content=content,
