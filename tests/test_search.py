@@ -174,4 +174,4 @@ async def test_hybrid_search_respects_limit(tmp_path):
     results = await hybrid_search(db, embedder, "test entry", "vault", limit=3)
     await db.close()
 
-    assert len(results) <= 3
+    assert len(results) == 3

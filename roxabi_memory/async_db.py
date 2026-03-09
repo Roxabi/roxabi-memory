@@ -26,16 +26,18 @@ class AsyncMemoryDB:
         self._db: aiosqlite.Connection | None = None
         self._embeddings = embeddings
         self._embedder = None
+        self._background_tasks: set[asyncio.Task] = set()
 
         if embeddings:
             try:
-                from .embeddings import Embedder
+                from .embeddings import Embedder  # noqa: F811 — import guard
             except ImportError as exc:
                 raise ImportError(
                     "Embeddings require fastembed and sqlite-vec: "
                     "pip install roxabi-memory[embeddings]"
                 ) from exc
-            self._embedder = Embedder()
+            # Store class for deferred init in connect() via run_in_executor
+            self._embedder_cls = Embedder
 
     async def connect(self) -> None:
         """Open the aiosqlite connection with WAL mode and run schema migration."""
@@ -48,6 +50,9 @@ class AsyncMemoryDB:
 
         if self._embeddings:
             await self._load_sqlite_vec()
+            # Load ONNX model off the event loop thread
+            loop = asyncio.get_running_loop()
+            self._embedder = await loop.run_in_executor(None, self._embedder_cls)
 
     async def _load_sqlite_vec(self) -> None:
         """Load the sqlite-vec extension on the aiosqlite worker thread."""
@@ -199,10 +204,20 @@ class AsyncMemoryDB:
             from .search import hybrid_search
 
             results = await hybrid_search(db, self._embedder, query, namespace, limit)
-            # Fire-and-forget backfill for NULL-embedding entries from BM25
-            null_ids = [r["id"] for r in results if r.get("embedding") is None]
-            if null_ids:
-                asyncio.create_task(self._backfill_entries(null_ids))
+            # Find result IDs that have NULL embedding via a targeted query
+            result_ids = [r["id"] for r in results]
+            if result_ids:
+                placeholders = ",".join("?" * len(result_ids))
+                async with db.execute(
+                    f"SELECT id FROM entries WHERE id IN ({placeholders})"
+                    " AND embedding IS NULL",
+                    result_ids,
+                ) as cur:
+                    null_ids = [row[0] for row in await cur.fetchall()]
+                if null_ids:
+                    task = asyncio.create_task(self._backfill_entries(null_ids))
+                    self._background_tasks.add(task)
+                    task.add_done_callback(self._background_tasks.discard)
             return results
 
         return await search_fts_async(db, query, namespace, limit)

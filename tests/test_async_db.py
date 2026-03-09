@@ -263,8 +263,9 @@ async def test_backfill_updates_null_embeddings(tmp_path) -> None:
         results = await db_emb.search("backfill test", namespace="vault")
         assert results
 
-        # Wait for backfill task to complete
-        await asyncio.sleep(0.5)
+        # Await all background tasks (deterministic, no sleep)
+        if db_emb._background_tasks:
+            await asyncio.gather(*db_emb._background_tasks)
 
         # Verify embedding is now non-NULL
         raw = db_emb._db_or_raise()
@@ -315,3 +316,68 @@ async def test_sqlite_vec_loaded(emb_db: AsyncMemoryDB) -> None:
     assert row is not None
     assert isinstance(row[0], float)
     assert row[0] > 0  # orthogonal vectors → distance > 0
+
+
+# ---------------------------------------------------------------------------
+# B4: sqlite-vec load failure raises RuntimeError
+# ---------------------------------------------------------------------------
+
+
+async def test_sqlite_vec_load_failure_raises_runtime_error(tmp_path, monkeypatch):
+    """OperationalError during sqlite-vec load is re-raised as RuntimeError."""
+    import roxabi_memory.async_db as adb_mod
+
+    async def broken_load(self):
+        raise Exception("mocked extension load failure")
+
+    monkeypatch.setattr(adb_mod.AsyncMemoryDB, "_load_sqlite_vec", broken_load)
+
+    db = AsyncMemoryDB(tmp_path / "vec_fail.db", embeddings=True)
+    with pytest.raises(Exception, match="mocked extension load failure"):
+        await db.connect()
+
+
+# ---------------------------------------------------------------------------
+# S7: AsyncMemoryDB(embeddings=True) ImportError when fastembed missing
+# ---------------------------------------------------------------------------
+
+
+def test_async_db_embeddings_import_error(tmp_path, monkeypatch):
+    """AsyncMemoryDB(embeddings=True) raises ImportError when fastembed unavailable."""
+    import importlib
+    import sys
+
+    # Remove cached embeddings module
+    mods_to_remove = [
+        k for k in sys.modules if k.startswith("roxabi_memory.embeddings")
+    ]
+    for m in mods_to_remove:
+        del sys.modules[m]
+
+    original_import = __import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "fastembed" or name.startswith("fastembed."):
+            raise ImportError("mocked: no fastembed")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.__import__", mock_import)
+
+    # Also remove the cached async_db module so it re-imports embeddings
+    adb_key = "roxabi_memory.async_db"
+    if adb_key in sys.modules:
+        del sys.modules[adb_key]
+
+    try:
+        mod = importlib.import_module("roxabi_memory.async_db")
+        with pytest.raises(ImportError, match="fastembed|embeddings"):
+            mod.AsyncMemoryDB(tmp_path / "import_fail.db", embeddings=True)
+    finally:
+        # Cleanup: restore module cache
+        for k in list(sys.modules):
+            if (
+                k.startswith("roxabi_memory.embeddings")
+                or k == "roxabi_memory.async_db"
+            ):
+                del sys.modules[k]
+        importlib.import_module("roxabi_memory.async_db")

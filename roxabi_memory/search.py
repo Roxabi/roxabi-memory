@@ -43,7 +43,8 @@ async def _cosine_search(
     async with db.execute(_COSINE_SQL, (query_embedding, namespace, limit)) as cur:
         rows = await cur.fetchall()
         cols = [d[0] for d in cur.description]
-    return [dict(zip(cols, r)) for r in rows]
+    # Strip 'distance' column — keep result schema consistent with BM25 results
+    return [{k: v for k, v in zip(cols, r) if k != "distance"} for r in rows]
 
 
 def _rrf_merge(

@@ -29,7 +29,12 @@ class Embedder:
     def embed(self, text: str) -> bytes:
         """Compute embedding and return as float32 BLOB."""
         vectors = list(self._model.embed([text]))
-        return struct.pack(f"{self.DIMENSION}f", *vectors[0])
+        vec = vectors[0]
+        if len(vec) != self.DIMENSION:
+            raise ValueError(
+                f"Model returned {len(vec)}-dim vector, expected {self.DIMENSION}"
+            )
+        return struct.pack(f"{self.DIMENSION}f", *vec)
 
     async def embed_async(self, text: str) -> bytes:
         """Async wrapper — runs embed() in a thread via run_in_executor."""
