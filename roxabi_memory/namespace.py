@@ -1,4 +1,5 @@
 """Namespace-scoped read/write wrappers for AsyncMemoryDB."""
+
 from __future__ import annotations
 
 from typing import Any

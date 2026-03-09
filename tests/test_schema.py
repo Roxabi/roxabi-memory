@@ -1,4 +1,5 @@
 """Tests for roxabi_memory.schema — migrate() and schema correctness."""
+
 import sqlite3
 
 

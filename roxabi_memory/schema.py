@@ -1,4 +1,5 @@
 """Schema definition and migration runner for roxabi-memory v2."""
+
 from __future__ import annotations
 
 import sqlite3

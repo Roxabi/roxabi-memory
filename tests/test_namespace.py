@@ -1,4 +1,5 @@
 """Tests for roxabi_memory.namespace — NamespacedReader + NamespacedWriter (S2)."""
+
 from __future__ import annotations
 
 import pytest
