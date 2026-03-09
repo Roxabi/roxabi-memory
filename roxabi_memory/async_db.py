@@ -1,7 +1,10 @@
 """Async (aiosqlite) interface for roxabi-memory."""
+
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -10,13 +13,31 @@ import aiosqlite
 from .fts import search_fts_async
 from .schema import MIGRATIONS, SCHEMA_V1_SQL
 
+logger = logging.getLogger(__name__)
+
 
 class AsyncMemoryDB:
     """Async (aiosqlite) wrapper. Use in asyncio-based Lyra agents."""
 
-    def __init__(self, path: Path | str) -> None:
-        self._path = path if isinstance(path, str) and path == ":memory:" else Path(path)
+    def __init__(self, path: Path | str, *, embeddings: bool = False) -> None:
+        self._path = (
+            path if isinstance(path, str) and path == ":memory:" else Path(path)
+        )
         self._db: aiosqlite.Connection | None = None
+        self._embeddings = embeddings
+        self._embedder = None
+        self._background_tasks: set[asyncio.Task] = set()
+
+        if embeddings:
+            try:
+                from .embeddings import Embedder  # noqa: F811 — import guard
+            except ImportError as exc:
+                raise ImportError(
+                    "Embeddings require fastembed and sqlite-vec: "
+                    "pip install roxabi-memory[embeddings]"
+                ) from exc
+            # Store class for deferred init in connect() via run_in_executor
+            self._embedder_cls = Embedder
 
     async def connect(self) -> None:
         """Open the aiosqlite connection with WAL mode and run schema migration."""
@@ -26,6 +47,26 @@ class AsyncMemoryDB:
         await self._db.execute("PRAGMA journal_mode=WAL")
         await self._db.execute("PRAGMA foreign_keys=ON")
         await self._migrate()
+
+        if self._embeddings:
+            await self._load_sqlite_vec()
+            # Load ONNX model off the event loop thread
+            loop = asyncio.get_running_loop()
+            self._embedder = await loop.run_in_executor(None, self._embedder_cls)
+
+    async def _load_sqlite_vec(self) -> None:
+        """Load the sqlite-vec extension on the aiosqlite worker thread."""
+        db = self._db_or_raise()
+        try:
+            import sqlite_vec
+
+            await db._execute(sqlite_vec.load, db._conn)
+        except Exception as exc:
+            raise RuntimeError(
+                "sqlite-vec extension failed to load — "
+                "Python may lack extension support or sqlite-vec is not installed. "
+                f"Original error: {exc}"
+            ) from exc
 
     async def _migrate(self) -> None:
         """Apply SCHEMA_V1_SQL + incremental migrations via aiosqlite.
@@ -69,11 +110,39 @@ class AsyncMemoryDB:
             metadata_str = json.dumps(metadata or {})
         except (TypeError, ValueError) as exc:
             raise ValueError(f"metadata is not JSON-serializable: {exc}") from exc
-        cur = await db.execute(
-            "INSERT INTO entries (category, type, title, content, namespace, metadata)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            (category, type, title or content[:80], content, namespace, metadata_str),
-        )
+
+        # Compute embedding if enabled
+        embedding = None
+        if self._embeddings and self._embedder is not None:
+            embedding = await self._embedder.embed_async(content)
+
+        if embedding is not None:
+            cur = await db.execute(
+                "INSERT INTO entries (category, type, title, content, namespace, metadata, embedding)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    category,
+                    type,
+                    title or content[:80],
+                    content,
+                    namespace,
+                    metadata_str,
+                    embedding,
+                ),
+            )
+        else:
+            cur = await db.execute(
+                "INSERT INTO entries (category, type, title, content, namespace, metadata)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    category,
+                    type,
+                    title or content[:80],
+                    content,
+                    namespace,
+                    metadata_str,
+                ),
+            )
         await db.commit()
         assert cur.lastrowid is not None
         return cur.lastrowid
@@ -101,23 +170,45 @@ class AsyncMemoryDB:
 
         meta = json.dumps({"session_id": session_id, **metadata_fields})
 
+        # Compute embedding if enabled
+        embedding = None
+        if self._embeddings and self._embedder is not None:
+            embedding = await self._embedder.embed_async(summary)
+
         if row is not None:
             entry_id: int = row[0]
-            await db.execute(
-                "UPDATE entries"
-                " SET content = ?, metadata = ?, updated_at = datetime('now')"
-                " WHERE id = ?",
-                (summary, meta, entry_id),
-            )
+            if embedding is not None:
+                await db.execute(
+                    "UPDATE entries"
+                    " SET content = ?, metadata = ?, embedding = ?,"
+                    " updated_at = datetime('now')"
+                    " WHERE id = ?",
+                    (summary, meta, embedding, entry_id),
+                )
+            else:
+                await db.execute(
+                    "UPDATE entries"
+                    " SET content = ?, metadata = ?, updated_at = datetime('now')"
+                    " WHERE id = ?",
+                    (summary, meta, entry_id),
+                )
             await db.commit()
             return entry_id
         else:
-            cur2 = await db.execute(
-                "INSERT INTO entries"
-                " (category, type, title, content, namespace, metadata)"
-                " VALUES ('session', 'session', ?, ?, 'vault', ?)",
-                (session_id, summary, meta),
-            )
+            if embedding is not None:
+                cur2 = await db.execute(
+                    "INSERT INTO entries"
+                    " (category, type, title, content, namespace, metadata, embedding)"
+                    " VALUES ('session', 'session', ?, ?, 'vault', ?, ?)",
+                    (session_id, summary, meta, embedding),
+                )
+            else:
+                cur2 = await db.execute(
+                    "INSERT INTO entries"
+                    " (category, type, title, content, namespace, metadata)"
+                    " VALUES ('session', 'session', ?, ?, 'vault', ?)",
+                    (session_id, summary, meta),
+                )
             await db.commit()
             assert cur2.lastrowid is not None
             return cur2.lastrowid
@@ -128,8 +219,52 @@ class AsyncMemoryDB:
         namespace: str,
         limit: int = 5,
     ) -> list[dict]:
-        """FTS5/BM25 search scoped to namespace (vault entries always included)."""
-        return await search_fts_async(self._db_or_raise(), query, namespace, limit)
+        """Search scoped to namespace. Hybrid (BM25+cosine) when embeddings enabled."""
+        db = self._db_or_raise()
+
+        if self._embeddings and self._embedder is not None:
+            from .search import hybrid_search
+
+            results = await hybrid_search(db, self._embedder, query, namespace, limit)
+            # Find result IDs that have NULL embedding via a targeted query
+            result_ids = [r["id"] for r in results]
+            if result_ids:
+                placeholders = ",".join("?" * len(result_ids))
+                async with db.execute(
+                    f"SELECT id FROM entries WHERE id IN ({placeholders})"
+                    " AND embedding IS NULL",
+                    result_ids,
+                ) as cur:
+                    null_ids = [row[0] for row in await cur.fetchall()]
+                if null_ids:
+                    task = asyncio.create_task(self._backfill_entries(null_ids))
+                    self._background_tasks.add(task)
+                    task.add_done_callback(self._background_tasks.discard)
+            return results
+
+        return await search_fts_async(db, query, namespace, limit)
+
+    async def _backfill_entries(self, entry_ids: list[int]) -> None:
+        """Backfill embeddings for entries with NULL embedding. Best-effort."""
+        try:
+            db = self._db_or_raise()
+            for eid in entry_ids:
+                async with db.execute(
+                    "SELECT content, embedding FROM entries WHERE id = ?", (eid,)
+                ) as cur:
+                    row = await cur.fetchone()
+                if row is None or row[1] is not None:
+                    continue  # deleted or already backfilled
+                content = row[0]
+                if self._embedder is not None:
+                    embedding = await self._embedder.embed_async(content)
+                    await db.execute(
+                        "UPDATE entries SET embedding = ? WHERE id = ?",
+                        (embedding, eid),
+                    )
+            await db.commit()
+        except (aiosqlite.OperationalError, ValueError, OSError):
+            logger.warning("Backfill failed for entries %s", entry_ids, exc_info=True)
 
     async def close(self) -> None:
         if self._db is not None:
