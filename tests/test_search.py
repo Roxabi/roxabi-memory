@@ -69,8 +69,8 @@ def test_rrf_merge_empty_lists():
     assert merged == []
 
 
-def test_rrf_merge_respects_k_parameter():
-    """With very high k, all single-list entries have similar scores."""
+def test_rrf_merge_single_list_preserves_order():
+    """Single-list entries preserve rank order in merged output."""
     bm25 = [{"id": i} for i in range(5)]
     cosine = []
     merged = _rrf_merge(bm25, cosine, k=60)

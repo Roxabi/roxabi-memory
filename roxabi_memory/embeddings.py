@@ -34,6 +34,9 @@ class Embedder:
             raise ValueError(
                 f"Model returned {len(vec)}-dim vector, expected {self.DIMENSION}"
             )
+        magnitude = sum(v * v for v in vec) ** 0.5
+        if magnitude == 0.0:
+            raise ValueError("Model returned zero-magnitude vector")
         return struct.pack(f"{self.DIMENSION}f", *vec)
 
     async def embed_async(self, text: str) -> bytes:

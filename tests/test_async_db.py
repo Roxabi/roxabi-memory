@@ -202,9 +202,10 @@ async def emb_db(tmp_path):
 
 
 async def test_save_entry_stores_embedding(emb_db: AsyncMemoryDB) -> None:
+    # Act
     entry_id = await emb_db.save_entry("hello world embeddings test", namespace="vault")
 
-    # Verify embedding is non-NULL in DB
+    # Assert — embedding is non-NULL in DB
     db = emb_db._db_or_raise()
     async with db.execute(
         "SELECT embedding FROM entries WHERE id = ?", (entry_id,)
@@ -222,16 +223,16 @@ async def test_save_entry_stores_embedding(emb_db: AsyncMemoryDB) -> None:
 
 
 async def test_search_returns_hybrid_results(emb_db: AsyncMemoryDB) -> None:
-    # Save entries with embeddings
+    # Arrange
     await emb_db.save_entry("machine learning algorithms and models", namespace="vault")
     await emb_db.save_entry("cooking recipes for pasta dishes", namespace="vault")
     await emb_db.save_entry("neural network deep learning", namespace="vault")
 
-    # Search — "machine learning" should rank ML entries higher
+    # Act
     results = await emb_db.search("machine learning", namespace="vault")
 
+    # Assert — ML entry ranks highest (best BM25 + cosine match)
     assert results
-    # First result should be ML-related (best BM25 + cosine match)
     assert "machine learning" in results[0]["content"]
 
 
@@ -277,19 +278,65 @@ async def test_backfill_updates_null_embeddings(tmp_path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# S4: Namespace isolation with embeddings=True
+# ---------------------------------------------------------------------------
+
+
+async def test_namespace_isolation_with_embeddings(emb_db: AsyncMemoryDB) -> None:
+    """Cosine search respects namespace filter — 'other' not visible to 'lyra'."""
+    # Arrange
+    await emb_db.save_entry("other agent secret with embeddings", namespace="other")
+
+    # Act
+    results = await emb_db.search("secret", namespace="lyra")
+
+    # Assert — 'other' namespace not visible to 'lyra'
+    assert not results
+
+
+# ---------------------------------------------------------------------------
+# S5: Backfill idempotency — second search doesn't re-backfill
+# ---------------------------------------------------------------------------
+
+
+async def test_backfill_idempotency(tmp_path) -> None:
+    """Second search doesn't trigger backfill for already-filled entries."""
+    import asyncio
+
+    # Arrange — insert without embeddings
+    async with AsyncMemoryDB(tmp_path / "idem.db") as db_no_emb:
+        await db_no_emb.save_entry("idempotency test content", namespace="vault")
+
+    # Act — first search triggers backfill
+    async with AsyncMemoryDB(tmp_path / "idem.db", embeddings=True) as db_emb:
+        await db_emb.search("idempotency", namespace="vault")
+        if db_emb._background_tasks:
+            await asyncio.gather(*db_emb._background_tasks)
+
+        # Act — second search should NOT trigger new backfill tasks
+        db_emb._background_tasks.clear()
+        await db_emb.search("idempotency", namespace="vault")
+
+        # Assert — no new backfill tasks created
+        assert len(db_emb._background_tasks) == 0
+
+
+# ---------------------------------------------------------------------------
 # T13: embeddings=False preserves BM25-only behavior
 # ---------------------------------------------------------------------------
 
 
 async def test_embeddings_false_preserves_bm25(db: AsyncMemoryDB) -> None:
     """Default embeddings=False works exactly as before."""
+    # Arrange / Act
     await db.save_entry("bm25 only test content", namespace="vault")
     results = await db.search("bm25 only", namespace="vault")
 
+    # Assert
     assert results
     assert "bm25 only" in results[0]["content"]
 
-    # Verify no embedding stored
+    # Assert — no embedding stored
     raw = db._db_or_raise()
     async with raw.execute(
         "SELECT embedding FROM entries WHERE id = ?", (results[0]["id"],)

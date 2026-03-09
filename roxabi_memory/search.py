@@ -81,10 +81,13 @@ async def hybrid_search(
     namespace: str,
     limit: int = 5,
 ) -> list[dict]:
-    """Run BM25 + cosine, merge via RRF, return top `limit` results."""
+    """Run BM25 + cosine in parallel, merge via RRF, return top `limit` results."""
+    import asyncio
+
     fetch = limit * 2
-    bm25 = await _bm25_search(db, query, namespace, fetch)
-    query_emb = await embedder.embed_async(query)
+    bm25_coro = _bm25_search(db, query, namespace, fetch)
+    emb_coro = embedder.embed_async(query)
+    bm25, query_emb = await asyncio.gather(bm25_coro, emb_coro)
     cosine = await _cosine_search(db, query_emb, namespace, fetch)
     merged = _rrf_merge(bm25, cosine, k=60)
     return merged[:limit]
