@@ -12,33 +12,24 @@ import pytest
 # ---------------------------------------------------------------------------
 
 
-def test_embed_returns_float32_blob():
-    from roxabi_memory.embeddings import Embedder
-
-    e = Embedder()
-    result = e.embed("hello world")
+def test_embed_returns_float32_blob(embedder):
+    result = embedder.embed("hello world")
     assert isinstance(result, bytes)
     assert len(result) == 384 * 4  # float32 × 384
 
 
-def test_embed_values_are_finite_floats():
-    from roxabi_memory.embeddings import Embedder
-
-    e = Embedder()
-    blob = e.embed("test sentence")
+def test_embed_values_are_finite_floats(embedder):
+    blob = embedder.embed("test sentence")
     floats = struct.unpack(f"{384}f", blob)
     assert all(isinstance(v, float) for v in floats)
     assert all(abs(v) < 100 for v in floats)  # sane magnitude
 
 
-def test_model_loaded_once():
-    from roxabi_memory.embeddings import Embedder
-
-    e = Embedder()
-    e.embed("first")
-    model_id = id(e._model)
-    e.embed("second")
-    assert id(e._model) == model_id
+def test_model_loaded_once(embedder):
+    embedder.embed("first")
+    model_id = id(embedder._model)
+    embedder.embed("second")
+    assert id(embedder._model) == model_id
 
 
 # ---------------------------------------------------------------------------
@@ -46,20 +37,14 @@ def test_model_loaded_once():
 # ---------------------------------------------------------------------------
 
 
-async def test_embed_async_returns_same_as_sync():
-    from roxabi_memory.embeddings import Embedder
-
-    e = Embedder()
-    sync_result = e.embed("test text")
-    async_result = await e.embed_async("test text")
+async def test_embed_async_returns_same_as_sync(embedder):
+    sync_result = embedder.embed("test text")
+    async_result = await embedder.embed_async("test text")
     assert sync_result == async_result
 
 
-async def test_embed_async_returns_bytes():
-    from roxabi_memory.embeddings import Embedder
-
-    e = Embedder()
-    result = await e.embed_async("async test")
+async def test_embed_async_returns_bytes(embedder):
+    result = await embedder.embed_async("async test")
     assert isinstance(result, bytes)
     assert len(result) == 384 * 4
 

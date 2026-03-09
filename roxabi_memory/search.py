@@ -23,16 +23,6 @@ _COSINE_SQL = """
 """
 
 
-async def _bm25_search(
-    db: aiosqlite.Connection,
-    query: str,
-    namespace: str,
-    limit: int,
-) -> list[dict]:
-    """BM25 keyword search — delegates to existing FTS5 implementation."""
-    return await search_fts_async(db, query, namespace, limit)
-
-
 async def _cosine_search(
     db: aiosqlite.Connection,
     query_embedding: bytes,
@@ -85,7 +75,7 @@ async def hybrid_search(
     import asyncio
 
     fetch = limit * 2
-    bm25_coro = _bm25_search(db, query, namespace, fetch)
+    bm25_coro = search_fts_async(db, query, namespace, fetch)
     emb_coro = embedder.embed_async(query)
     bm25, query_emb = await asyncio.gather(bm25_coro, emb_coro)
     cosine = await _cosine_search(db, query_emb, namespace, fetch)

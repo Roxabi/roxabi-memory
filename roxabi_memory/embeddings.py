@@ -28,8 +28,7 @@ class Embedder:
 
     def embed(self, text: str) -> bytes:
         """Compute embedding and return as float32 BLOB."""
-        vectors = list(self._model.embed([text]))
-        vec = vectors[0]
+        vec = next(iter(self._model.embed([text])))
         if len(vec) != self.DIMENSION:
             raise ValueError(
                 f"Model returned {len(vec)}-dim vector, expected {self.DIMENSION}"

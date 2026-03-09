@@ -95,6 +95,12 @@ class AsyncMemoryDB:
             raise RuntimeError("AsyncMemoryDB not connected — call connect() first")
         return self._db
 
+    async def _embed_if_enabled(self, text: str) -> bytes | None:
+        """Return embedding bytes if embeddings are enabled, else None."""
+        if self._embeddings and self._embedder is not None:
+            return await self._embedder.embed_async(text)
+        return None
+
     async def save_entry(
         self,
         content: str,
@@ -111,38 +117,12 @@ class AsyncMemoryDB:
         except (TypeError, ValueError) as exc:
             raise ValueError(f"metadata is not JSON-serializable: {exc}") from exc
 
-        # Compute embedding if enabled
-        embedding = None
-        if self._embeddings and self._embedder is not None:
-            embedding = await self._embedder.embed_async(content)
-
-        if embedding is not None:
-            cur = await db.execute(
-                "INSERT INTO entries (category, type, title, content, namespace, metadata, embedding)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (
-                    category,
-                    type,
-                    title or content[:80],
-                    content,
-                    namespace,
-                    metadata_str,
-                    embedding,
-                ),
-            )
-        else:
-            cur = await db.execute(
-                "INSERT INTO entries (category, type, title, content, namespace, metadata)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    category,
-                    type,
-                    title or content[:80],
-                    content,
-                    namespace,
-                    metadata_str,
-                ),
-            )
+        embedding = await self._embed_if_enabled(content)
+        cur = await db.execute(
+            "INSERT INTO entries (category, type, title, content, namespace, metadata, embedding)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (category, type, title or content[:80], content, namespace, metadata_str, embedding),
+        )
         await db.commit()
         assert cur.lastrowid is not None
         return cur.lastrowid
@@ -169,46 +149,26 @@ class AsyncMemoryDB:
             row = await cur.fetchone()
 
         meta = json.dumps({"session_id": session_id, **metadata_fields})
-
-        # Compute embedding if enabled
-        embedding = None
-        if self._embeddings and self._embedder is not None:
-            embedding = await self._embedder.embed_async(summary)
+        embedding = await self._embed_if_enabled(summary)
 
         if row is not None:
             entry_id: int = row[0]
-            if embedding is not None:
-                await db.execute(
-                    "UPDATE entries"
-                    " SET content = ?, metadata = ?, embedding = ?,"
-                    " updated_at = datetime('now')"
-                    " WHERE id = ?",
-                    (summary, meta, embedding, entry_id),
-                )
-            else:
-                await db.execute(
-                    "UPDATE entries"
-                    " SET content = ?, metadata = ?, updated_at = datetime('now')"
-                    " WHERE id = ?",
-                    (summary, meta, entry_id),
-                )
+            await db.execute(
+                "UPDATE entries"
+                " SET content = ?, metadata = ?, embedding = ?,"
+                " updated_at = datetime('now')"
+                " WHERE id = ?",
+                (summary, meta, embedding, entry_id),
+            )
             await db.commit()
             return entry_id
         else:
-            if embedding is not None:
-                cur2 = await db.execute(
-                    "INSERT INTO entries"
-                    " (category, type, title, content, namespace, metadata, embedding)"
-                    " VALUES ('session', 'session', ?, ?, 'vault', ?, ?)",
-                    (session_id, summary, meta, embedding),
-                )
-            else:
-                cur2 = await db.execute(
-                    "INSERT INTO entries"
-                    " (category, type, title, content, namespace, metadata)"
-                    " VALUES ('session', 'session', ?, ?, 'vault', ?)",
-                    (session_id, summary, meta),
-                )
+            cur2 = await db.execute(
+                "INSERT INTO entries"
+                " (category, type, title, content, namespace, metadata, embedding)"
+                " VALUES ('session', 'session', ?, ?, 'vault', ?, ?)",
+                (session_id, summary, meta, embedding),
+            )
             await db.commit()
             assert cur2.lastrowid is not None
             return cur2.lastrowid
@@ -248,25 +208,34 @@ class AsyncMemoryDB:
         """Backfill embeddings for entries with NULL embedding. Best-effort."""
         try:
             db = self._db_or_raise()
-            for eid in entry_ids:
-                async with db.execute(
-                    "SELECT content, embedding FROM entries WHERE id = ?", (eid,)
-                ) as cur:
-                    row = await cur.fetchone()
-                if row is None or row[1] is not None:
-                    continue  # deleted or already backfilled
-                content = row[0]
-                if self._embedder is not None:
-                    embedding = await self._embedder.embed_async(content)
-                    await db.execute(
-                        "UPDATE entries SET embedding = ? WHERE id = ?",
-                        (embedding, eid),
-                    )
-            await db.commit()
+            if not entry_ids or self._embedder is None:
+                return
+            # Batch fetch all entries needing backfill in a single query.
+            placeholders = ",".join("?" * len(entry_ids))
+            async with db.execute(
+                f"SELECT id, content FROM entries"
+                f" WHERE id IN ({placeholders}) AND embedding IS NULL",
+                entry_ids,
+            ) as cur:
+                rows = await cur.fetchall()
+            for eid, content in rows:
+                embedding = await self._embedder.embed_async(content)
+                await db.execute(
+                    "UPDATE entries SET embedding = ? WHERE id = ?",
+                    (embedding, eid),
+                )
+            if rows:
+                await db.commit()
         except (aiosqlite.OperationalError, ValueError, OSError):
             logger.warning("Backfill failed for entries %s", entry_ids, exc_info=True)
 
     async def close(self) -> None:
+        # Cancel any in-flight backfill tasks before closing the connection.
+        for task in self._background_tasks:
+            task.cancel()
+        if self._background_tasks:
+            await asyncio.gather(*self._background_tasks, return_exceptions=True)
+            self._background_tasks.clear()
         if self._db is not None:
             await self._db.close()
             self._db = None
