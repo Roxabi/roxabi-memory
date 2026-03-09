@@ -1,4 +1,5 @@
 """Tests for roxabi_memory.async_db — AsyncMemoryDB (S2)."""
+
 from __future__ import annotations
 
 import time
@@ -181,3 +182,136 @@ async def test_connect_before_operations_required(tmp_path) -> None:
     # Act / Assert
     with pytest.raises(RuntimeError, match="not connected"):
         await db.save_entry("should fail")
+
+
+# ===========================================================================
+# S3 — Hybrid Search Integration Tests
+# ===========================================================================
+
+
+@pytest.fixture
+async def emb_db(tmp_path):
+    """Provide a connected AsyncMemoryDB with embeddings=True."""
+    async with AsyncMemoryDB(tmp_path / "test_emb.db", embeddings=True) as database:
+        yield database
+
+
+# ---------------------------------------------------------------------------
+# T10: save_entry stores embedding when embeddings=True
+# ---------------------------------------------------------------------------
+
+
+async def test_save_entry_stores_embedding(emb_db: AsyncMemoryDB) -> None:
+    entry_id = await emb_db.save_entry("hello world embeddings test", namespace="vault")
+
+    # Verify embedding is non-NULL in DB
+    db = emb_db._db_or_raise()
+    async with db.execute(
+        "SELECT embedding FROM entries WHERE id = ?", (entry_id,)
+    ) as cur:
+        row = await cur.fetchone()
+
+    assert row is not None
+    assert row[0] is not None  # embedding BLOB stored
+    assert len(row[0]) == 384 * 4  # float32 × 384
+
+
+# ---------------------------------------------------------------------------
+# T11: search returns hybrid results (integration)
+# ---------------------------------------------------------------------------
+
+
+async def test_search_returns_hybrid_results(emb_db: AsyncMemoryDB) -> None:
+    # Save entries with embeddings
+    await emb_db.save_entry("machine learning algorithms and models", namespace="vault")
+    await emb_db.save_entry("cooking recipes for pasta dishes", namespace="vault")
+    await emb_db.save_entry("neural network deep learning", namespace="vault")
+
+    # Search — "machine learning" should rank ML entries higher
+    results = await emb_db.search("machine learning", namespace="vault")
+
+    assert results
+    # First result should be ML-related (best BM25 + cosine match)
+    assert "machine learning" in results[0]["content"]
+
+
+# ---------------------------------------------------------------------------
+# T12: backfill updates NULL embeddings
+# ---------------------------------------------------------------------------
+
+
+async def test_backfill_updates_null_embeddings(tmp_path) -> None:
+    import asyncio
+
+    # Step 1: insert without embeddings
+    async with AsyncMemoryDB(tmp_path / "backfill.db") as db_no_emb:
+        entry_id = await db_no_emb.save_entry(
+            "backfill test content", namespace="vault"
+        )
+
+    # Verify embedding is NULL
+    async with AsyncMemoryDB(tmp_path / "backfill.db") as db_check:
+        raw = db_check._db_or_raise()
+        async with raw.execute(
+            "SELECT embedding FROM entries WHERE id = ?", (entry_id,)
+        ) as cur:
+            row = await cur.fetchone()
+        assert row[0] is None  # no embedding yet
+
+    # Step 2: search with embeddings=True → triggers backfill
+    async with AsyncMemoryDB(tmp_path / "backfill.db", embeddings=True) as db_emb:
+        results = await db_emb.search("backfill test", namespace="vault")
+        assert results
+
+        # Wait for backfill task to complete
+        await asyncio.sleep(0.5)
+
+        # Verify embedding is now non-NULL
+        raw = db_emb._db_or_raise()
+        async with raw.execute(
+            "SELECT embedding FROM entries WHERE id = ?", (entry_id,)
+        ) as cur:
+            row = await cur.fetchone()
+        assert row[0] is not None, "Backfill should have populated embedding"
+
+
+# ---------------------------------------------------------------------------
+# T13: embeddings=False preserves BM25-only behavior
+# ---------------------------------------------------------------------------
+
+
+async def test_embeddings_false_preserves_bm25(db: AsyncMemoryDB) -> None:
+    """Default embeddings=False works exactly as before."""
+    await db.save_entry("bm25 only test content", namespace="vault")
+    results = await db.search("bm25 only", namespace="vault")
+
+    assert results
+    assert "bm25 only" in results[0]["content"]
+
+    # Verify no embedding stored
+    raw = db._db_or_raise()
+    async with raw.execute(
+        "SELECT embedding FROM entries WHERE id = ?", (results[0]["id"],)
+    ) as cur:
+        row = await cur.fetchone()
+    assert row[0] is None
+
+
+# ---------------------------------------------------------------------------
+# T14: sqlite-vec loaded in connect()
+# ---------------------------------------------------------------------------
+
+
+async def test_sqlite_vec_loaded(emb_db: AsyncMemoryDB) -> None:
+    """sqlite-vec extension is available after connect with embeddings=True."""
+    import struct
+
+    db = emb_db._db_or_raise()
+    # Create two tiny float32 vectors and compute distance
+    v1 = struct.pack("2f", 1.0, 0.0)
+    v2 = struct.pack("2f", 0.0, 1.0)
+    async with db.execute("SELECT vec_distance_cosine(?, ?)", (v1, v2)) as cur:
+        row = await cur.fetchone()
+    assert row is not None
+    assert isinstance(row[0], float)
+    assert row[0] > 0  # orthogonal vectors → distance > 0
