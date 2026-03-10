@@ -10,7 +10,7 @@
     {
       "name": "roxabi-memory",
       "description": "Persistent memory — SQLite+FTS5 knowledge base with CLI, library, and vault skills.",
-      "source": ".",
+      "source": "./",
       "category": "data"
     }
   ]
