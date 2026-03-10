@@ -1,0 +1,17 @@
+{
+  "name": "roxabi-memory-marketplace",
+  "version": "1.0.0",
+  "description": "Persistent memory for Roxabi agents — SQLite+FTS5 knowledge base with CLI, library, and vault skills.",
+  "owner": {
+    "name": "Roxabi",
+    "url": "https://github.com/Roxabi"
+  },
+  "plugins": [
+    {
+      "name": "roxabi-memory",
+      "description": "Persistent memory — SQLite+FTS5 knowledge base with CLI, library, and vault skills.",
+      "source": ".",
+      "category": "data"
+    }
+  ]
+}
