@@ -23,6 +23,43 @@ def db_path(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# init
+# ---------------------------------------------------------------------------
+
+
+def test_init_creates_vault(tmp_path) -> None:
+    vault_home = tmp_path / "vault"
+    db = vault_home / "vault.db"
+    result = runner.invoke(app, ["--db", str(db), "init"])
+
+    assert result.exit_code == 0
+    assert db.exists()
+    assert (vault_home / "config").is_dir()
+    assert (vault_home / "content").is_dir()
+    assert (vault_home / "ideas").is_dir()
+    assert (vault_home / "learnings").is_dir()
+    assert (vault_home / "backup").is_dir()
+
+
+def test_init_existing_vault(db_path: str) -> None:
+    result = runner.invoke(app, ["--db", db_path, "init"])
+
+    assert result.exit_code == 0
+    assert "already exists" in result.output.lower()
+
+
+def test_init_json(tmp_path) -> None:
+    vault_home = tmp_path / "vault"
+    db = vault_home / "vault.db"
+    result = runner.invoke(app, ["--db", str(db), "--json", "init"])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["status"] == "initialized"
+    assert data["entries"] == 0
+
+
+# ---------------------------------------------------------------------------
 # list
 # ---------------------------------------------------------------------------
 
@@ -109,6 +146,16 @@ def test_search_namespace(db_path: str) -> None:
     assert "Second" in result.output
     # vault entries are also visible to lyra (by design)
     assert "First" in result.output
+
+
+def test_search_with_limit(db_path: str) -> None:
+    result = runner.invoke(
+        app, ["--db", db_path, "--json", "search", "entry", "--limit", "1"]
+    )
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert len(data) == 1
 
 
 def test_search_json(db_path: str) -> None:
@@ -241,6 +288,57 @@ def test_put_all_flags(db_path: str) -> None:
     assert entries[0].category == "C"
 
 
+def test_put_with_type(db_path: str) -> None:
+    result = runner.invoke(
+        app,
+        ["--db", db_path, "put", "my idea", "--type", "idea", "--category", "ideas"],
+    )
+
+    assert result.exit_code == 0
+
+    with MemoryDB(db_path) as db:
+        entries = db.list_entries(category="ideas")
+    assert len(entries) == 1
+    assert entries[0].type == "idea"
+
+
+def test_put_with_metadata(db_path: str) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "--db",
+            db_path,
+            "put",
+            "with meta",
+            "--metadata",
+            '{"source": "test"}',
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    with MemoryDB(db_path) as db:
+        entries = db.list_entries()
+    last = entries[-1]
+    assert json.loads(last.metadata) == {"source": "test"}
+
+
+def test_put_invalid_metadata(db_path: str) -> None:
+    result = runner.invoke(
+        app, ["--db", db_path, "put", "bad meta", "--metadata", "not json"]
+    )
+
+    assert result.exit_code == 1
+
+
+def test_put_json_output(db_path: str) -> None:
+    result = runner.invoke(app, ["--db", db_path, "--json", "put", "json out"])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["content"] == "json out"
+
+
 # ---------------------------------------------------------------------------
 # delete
 # ---------------------------------------------------------------------------
@@ -300,6 +398,24 @@ def test_export(db_path: str) -> None:
     assert len(data) == 3
 
 
+def test_export_with_category(db_path: str) -> None:
+    result = runner.invoke(app, ["--db", db_path, "export", "--category", "notes"])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert len(data) == 2
+    assert all(e["category"] == "notes" for e in data)
+
+
+def test_export_to_file(db_path: str, tmp_path) -> None:
+    out_file = tmp_path / "export.json"
+    result = runner.invoke(app, ["--db", db_path, "export", "-o", str(out_file)])
+
+    assert result.exit_code == 0
+    data = json.loads(out_file.read_text())
+    assert len(data) == 3
+
+
 # ---------------------------------------------------------------------------
 # Global options
 # ---------------------------------------------------------------------------
@@ -314,9 +430,12 @@ def test_db_env_var(db_path: str) -> None:
     assert "First" in result.output
 
 
-def test_no_db() -> None:
-    # Arrange / Act — no --db flag and no RMEM_DB env var set
-    result = runner.invoke(app, ["list"], env={})
+def test_default_db_path(tmp_path, monkeypatch) -> None:
+    """When no --db flag and no RMEM_DB, ROXABI_VAULT_HOME is used as default."""
+    vault_home = tmp_path / ".roxabi-vault"
+    monkeypatch.setenv("ROXABI_VAULT_HOME", str(vault_home))
+    # init creates the vault at the default path
+    result = runner.invoke(app, ["init"])
 
-    # Assert
-    assert result.exit_code == 1
+    assert result.exit_code == 0
+    assert (vault_home / "vault.db").exists()

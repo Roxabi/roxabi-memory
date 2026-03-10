@@ -1,4 +1,5 @@
 """FTS5/BM25 keyword search — sync and async variants."""
+
 from __future__ import annotations
 
 import re

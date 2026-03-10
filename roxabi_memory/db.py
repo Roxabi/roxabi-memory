@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .schema import migrate
 
@@ -68,13 +70,17 @@ class MemoryDB:
         title: str = "",
         category: str = "general",
         namespace: str = "vault",
-        metadata: str = "{}",
+        metadata: dict[str, Any] | None = None,
     ) -> MemoryEntry:
         conn = self._conn_or_raise()
+        try:
+            metadata_str = json.dumps(metadata or {})
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"metadata is not JSON-serializable: {exc}") from exc
         cur = conn.execute(
             "INSERT INTO entries (category, type, title, content, namespace, metadata)"
             " VALUES (?, ?, ?, ?, ?, ?)",
-            (category, type, title or content[:80], content, namespace, metadata),
+            (category, type, title or content[:80], content, namespace, metadata_str),
         )
         conn.commit()
         row = conn.execute(
