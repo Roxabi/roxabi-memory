@@ -19,6 +19,20 @@ app = typer.Typer(help="roxabi-memory CLI — manage memory entries.")
 console = Console()
 err_console = Console(stderr=True)
 
+
+# ---------------------------------------------------------------------------
+# Defaults
+# ---------------------------------------------------------------------------
+
+
+def _default_vault_home() -> Path:
+    return Path(os.environ.get("ROXABI_VAULT_HOME", str(Path.home() / ".roxabi-vault")))
+
+
+def _default_db_path() -> Path:
+    return _default_vault_home() / "vault.db"
+
+
 # ---------------------------------------------------------------------------
 # Shared state via callback
 # ---------------------------------------------------------------------------
@@ -45,11 +59,68 @@ def main(
     ] = False,
 ) -> None:
     """roxabi-memory — a local SQLite memory store."""
-    if not db:
-        err_console.print("Error: --db or RMEM_DB environment variable is required.")
-        raise typer.Exit(code=1)
-    state.db_path = Path(db)
+    state.db_path = Path(db) if db else _default_db_path()
     state.as_json = as_json
+
+
+# ---------------------------------------------------------------------------
+# init
+# ---------------------------------------------------------------------------
+
+
+@app.command("init")
+def init_vault() -> None:
+    """Initialize the vault: create directories and database."""
+    vault_home = state.db_path.parent
+
+    if state.db_path.exists():
+        with MemoryDB(state.db_path) as db:
+            data = db.get_stats()
+        if state.as_json:
+            typer.echo(
+                json.dumps(
+                    {
+                        "vault_home": str(vault_home),
+                        "db_path": str(state.db_path),
+                        "entries": data["count"],
+                        "status": "exists",
+                    },
+                    indent=2,
+                )
+            )
+            return
+        console.print(f"Vault already exists at {vault_home}")
+        console.print(f"  Entries: {data['count']}")
+        return
+
+    vault_home.mkdir(parents=True, exist_ok=True)
+    vault_home.chmod(0o700)
+    for sub in ("config", "content", "ideas", "learnings", "backup"):
+        (vault_home / sub).mkdir(exist_ok=True)
+
+    with MemoryDB(state.db_path) as db:
+        data = db.get_stats()
+
+    if state.as_json:
+        typer.echo(
+            json.dumps(
+                {
+                    "vault_home": str(vault_home),
+                    "db_path": str(state.db_path),
+                    "entries": data["count"],
+                    "status": "initialized",
+                },
+                indent=2,
+            )
+        )
+        return
+
+    console.print("[bold green]Vault initialized[/bold green]")
+    console.print(f"  Location:    {vault_home}")
+    console.print(f"  Database:    {state.db_path.name}")
+    console.print("  WAL mode:    enabled")
+    console.print("  Directories: config/, content/, ideas/, learnings/, backup/")
+    console.print("  Status:      ready")
 
 
 # ---------------------------------------------------------------------------
@@ -102,10 +173,13 @@ def search_entries(
         Optional[str],
         typer.Option("--namespace", help="Restrict search to namespace (+ vault)."),
     ] = None,
+    limit: Annotated[
+        int, typer.Option("--limit", help="Maximum number of results.")
+    ] = 20,
 ) -> None:
     """Full-text search over memory entries."""
     with MemoryDB(state.db_path) as db:
-        entries = db.search_fts(query, namespace=namespace)
+        entries = db.search_fts(query, namespace=namespace, limit=limit)
 
     if state.as_json:
         typer.echo(json.dumps([dataclasses.asdict(e) for e in entries], indent=2))
@@ -169,19 +243,38 @@ def put_entry(
     category: Annotated[
         str, typer.Option("--category", help="Category tag.")
     ] = "general",
+    type: Annotated[str, typer.Option("--type", help="Entry type.")] = "note",
     namespace: Annotated[
         str, typer.Option("--namespace", help="Namespace for the entry.")
     ] = "vault",
+    metadata: Annotated[
+        Optional[str],
+        typer.Option("--metadata", help="JSON metadata string."),
+    ] = None,
 ) -> None:
     """Save a new memory entry."""
+    meta_dict = None
+    if metadata:
+        try:
+            meta_dict = json.loads(metadata)
+        except json.JSONDecodeError as exc:
+            err_console.print(f"Invalid JSON metadata: {exc}")
+            raise typer.Exit(code=1)
+
     with MemoryDB(state.db_path) as db:
         entry = db.save_entry(
             content,
-            type="note",
+            type=type,
             title=title or "",
             category=category,
             namespace=namespace,
+            metadata=meta_dict,
         )
+
+    if state.as_json:
+        typer.echo(json.dumps(dataclasses.asdict(entry), indent=2))
+        return
+
     typer.echo(f"Saved entry {entry.id}: {entry.title!r}")
 
 
@@ -255,8 +348,24 @@ def stats() -> None:
 
 
 @app.command("export")
-def export_entries() -> None:
-    """Export all entries as a JSON array."""
+def export_entries(
+    category: Annotated[
+        Optional[str], typer.Option("--category", help="Filter by category.")
+    ] = None,
+    namespace: Annotated[
+        Optional[str], typer.Option("--namespace", help="Filter by namespace.")
+    ] = None,
+    output: Annotated[
+        Optional[str],
+        typer.Option("--output", "-o", help="Write to file instead of stdout."),
+    ] = None,
+) -> None:
+    """Export entries as a JSON array."""
     with MemoryDB(state.db_path) as db:
-        entries = db.list_entries(limit=None)
-    typer.echo(json.dumps([dataclasses.asdict(e) for e in entries], indent=2))
+        entries = db.list_entries(limit=None, category=category, namespace=namespace)
+    data = json.dumps([dataclasses.asdict(e) for e in entries], indent=2)
+    if output:
+        Path(output).write_text(data)
+        console.print(f"Exported {len(entries)} entries to {output}")
+    else:
+        typer.echo(data)

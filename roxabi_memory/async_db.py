@@ -121,7 +121,15 @@ class AsyncMemoryDB:
         cur = await db.execute(
             "INSERT INTO entries (category, type, title, content, namespace, metadata, embedding)"
             " VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (category, type, title or content[:80], content, namespace, metadata_str, embedding),
+            (
+                category,
+                type,
+                title or content[:80],
+                content,
+                namespace,
+                metadata_str,
+                embedding,
+            ),
         )
         await db.commit()
         assert cur.lastrowid is not None
