@@ -4,7 +4,8 @@
     "compress@roxabi-marketplace": true,
     "1b1@roxabi-marketplace": true,
     "context7-plugin@context7-marketplace": true,
-    "plugin-dev@claude-plugins-official": true
+    "plugin-dev@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "roxabi-marketplace": {
