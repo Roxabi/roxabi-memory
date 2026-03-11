@@ -2,14 +2,47 @@
 
 Persistent, structured memory storage for Lyra agents and vault skills. Backed by SQLite with FTS5 full-text search.
 
+[![CI](https://github.com/Roxabi/roxabi-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/Roxabi/roxabi-memory/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI](https://img.shields.io/pypi/v/roxabi-memory)](https://pypi.org/project/roxabi-memory/)
+
+## Why
+
+AI agents are stateless by default — every session starts cold. `roxabi-memory` gives Lyra and vault skills a persistent, searchable store so agents can recall past entries, surface relevant context via full-text search, and maintain isolated namespaces per agent without running a separate database server.
+
+A single SQLite file, no infra to manage, and an API that works in both sync and async code.
+
 ## Features
 
-- **SQLite + WAL mode** — single-file database, no server needed
-- **Full-text search** — FTS5/BM25 keyword search across entries
-- **Namespace isolation** — scope entries per agent while sharing global vault data
-- **Sync + async APIs** — `MemoryDB` (sqlite3) and `AsyncMemoryDB` (aiosqlite)
-- **CLI** — `rmem` command for shell-based CRUD and search
-- **Auto-migrating schema** — migrations run on every connect, no manual steps
+### Storage
+
+| Feature | Description |
+|---------|-------------|
+| SQLite + WAL mode | Single-file database, no server needed |
+| Auto-migrating schema | Migrations run on every connect, no manual steps |
+| Namespace isolation | Scope entries per agent while sharing global vault data |
+
+### Search & API
+
+| Feature | Description |
+|---------|-------------|
+| Full-text search | FTS5/BM25 keyword search across all entries |
+| Sync API | `MemoryDB` (sqlite3) for standard Python code |
+| Async API | `AsyncMemoryDB` (aiosqlite) for async frameworks |
+| CLI | `rmem` command for shell-based CRUD and search |
+
+## How it works
+
+Entries are stored in a SQLite database with WAL mode for concurrent reads. A FTS5 virtual table mirrors every entry for sub-millisecond keyword search. Each agent uses a `namespace` to scope its entries; vault skills read across all namespaces.
+
+```mermaid
+flowchart LR
+    A[Agent / CLI] -->|save_entry| B[MemoryDB / AsyncMemoryDB]
+    B -->|INSERT| C[(SQLite + FTS5)]
+    A -->|search_fts| B
+    B -->|BM25 rank| C
+    C -->|results| A
+```
 
 ## Installation
 
