@@ -929,7 +929,7 @@ wheels = [
 ]
 
 [[package]]
-name = "roxabi-memory"
+name = "roxabi-vault"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

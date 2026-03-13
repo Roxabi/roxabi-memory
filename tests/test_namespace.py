@@ -1,11 +1,11 @@
-"""Tests for roxabi_memory.namespace — NamespacedReader + NamespacedWriter (S2)."""
+"""Tests for roxabi_vault.namespace — NamespacedReader + NamespacedWriter (S2)."""
 
 from __future__ import annotations
 
 import pytest
 
-from roxabi_memory.async_db import AsyncMemoryDB
-from roxabi_memory.namespace import NamespacedReader, NamespacedWriter
+from roxabi_vault.async_db import AsyncMemoryDB
+from roxabi_vault.namespace import NamespacedReader, NamespacedWriter
 
 
 @pytest.fixture

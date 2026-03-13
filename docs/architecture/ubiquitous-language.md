@@ -1,6 +1,6 @@
 # Ubiquitous Language
 
-Glossary of domain terms used in roxabi-memory. Keeps agents and contributors aligned on vocabulary.
+Glossary of domain terms used in roxabi-vault. Keeps agents and contributors aligned on vocabulary.
 
 ## Glossary
 
@@ -18,7 +18,7 @@ Glossary of domain terms used in roxabi-memory. Keeps agents and contributors al
 | AsyncMemoryDB | The async (aiosqlite) database wrapper. Used in asyncio-based Lyra agents. | `async_db.py` |
 | NamespacedReader | A read-only view scoped to a specific namespace. Wraps `AsyncMemoryDB.search()`. | `namespace.py` |
 | NamespacedWriter | A write-only view scoped to a specific namespace. Wraps `AsyncMemoryDB.save_entry()`. | `namespace.py` |
-| Lyra | The agent runtime that consumes roxabi-memory as its persistence layer. | `__init__.py` |
+| Lyra | The agent runtime that consumes roxabi-vault as its persistence layer. | `__init__.py` |
 
 ## Common Confusions
 
@@ -27,4 +27,4 @@ Glossary of domain terms used in roxabi-memory. Keeps agents and contributors al
 | namespace vs. category | **Namespace** controls search isolation (entries in `vault` are always visible). **Category** is just a label for filtering — it has no access control implications. |
 | type vs. category | **Type** describes what the entry is (`"note"`, `"session"`). **Category** describes what it's about (`"general"`, `"debugging"`). Both are free-form text. |
 | MemoryDB vs. AsyncMemoryDB | Same operations, different runtimes. `MemoryDB` uses `sqlite3` (sync), `AsyncMemoryDB` uses `aiosqlite` (async). The async variant also has `upsert_session()`. |
-| vault (namespace) vs. vault (skill) | The **vault namespace** is the default namespace in the database. The **vault skill** is a consumer of roxabi-memory (a Claude Code skill that uses this library). |
+| vault (namespace) vs. vault (skill) | The **vault namespace** is the default namespace in the database. The **vault skill** is a consumer of roxabi-vault (a Claude Code skill that uses this library). |

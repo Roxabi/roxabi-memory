@@ -9,7 +9,7 @@ try:
     from fastembed import TextEmbedding
 except ImportError as exc:
     raise ImportError(
-        "fastembed is required for embeddings: pip install roxabi-memory[embeddings]"
+        "fastembed is required for embeddings: pip install roxabi-vault[embeddings]"
     ) from exc
 
 

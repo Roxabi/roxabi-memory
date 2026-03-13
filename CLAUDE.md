@@ -1,10 +1,10 @@
 @.claude/stack.yml
 
-# roxabi-memory
+# roxabi-vault
 
 ## TL;DR
 
-- **Project:** roxabi-memory
+- **Project:** roxabi-vault
 - **Before work:** Use `/dev #N` as the single entry point — it determines tier (S / F-lite / F-full) and drives the full lifecycle
 - **Always** `AskUserQuestion` for choices — never plain-text questions
 - **Never** commit without asking, push without request, or use `--force`/`--hard`/`--amend`

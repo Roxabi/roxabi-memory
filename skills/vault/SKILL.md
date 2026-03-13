@@ -9,7 +9,7 @@ allowed-tools: Read, Bash, Glob
 
 Manage the Roxabi vault — a local SQLite+FTS5 knowledge base at `~/.roxabi-vault/vault.db`.
 
-All operations go through the `rmem` CLI (installed via `roxabi-memory[cli]`).
+All operations go through the `vault` CLI (installed via `roxabi-vault[cli]`).
 Default DB: `$ROXABI_VAULT_HOME/vault.db` or `~/.roxabi-vault/vault.db`.
 
 ## Operations
@@ -33,7 +33,7 @@ Determine the operation from user input:
 Verify vault is initialized:
 
 ```bash
-rmem stats 2>&1 || echo "VAULT_NOT_READY"
+vault stats 2>&1 || echo "VAULT_NOT_READY"
 ```
 
 If vault is not ready, tell the user to run `vault-init` first. Do not attempt to create the database.
@@ -42,7 +42,7 @@ If vault is not ready, tell the user to run `vault-init` first. Do not attempt t
 
 **Add:**
 ```bash
-rmem put "<content>" --category "<category>" --type "<type>" --title "<title>"
+vault put "<content>" --category "<category>" --type "<type>" --title "<title>"
 ```
 
 Categories: `content`, `ideas`, `learnings`, `notes`, `references`, or user-specified.
@@ -59,42 +59,42 @@ Optional: `--metadata '{"key": "value"}'` for structured metadata.
 
 **Search:**
 ```bash
-rmem search "<query>" --limit <N>
+vault search "<query>" --limit <N>
 ```
 
 Present results in a readable table with id, title, category, and a content preview.
 
 **List:**
 ```bash
-rmem list --category "<category>" --namespace "<namespace>" --limit <N>
+vault list --category "<category>" --namespace "<namespace>" --limit <N>
 ```
 
 All filters are optional. Present results as a table.
 
 **Get:**
 ```bash
-rmem get <id>
+vault get <id>
 ```
 
 Display the full entry with all fields.
 
 **Delete:**
 ```bash
-rmem delete <id>
+vault delete <id>
 ```
 
 Before deleting, get the entry and show it to the user. Ask for confirmation using AskUserQuestion.
 
 **Stats:**
 ```bash
-rmem stats
+vault stats
 ```
 
 Format the output as a readable summary.
 
 **Export:**
 ```bash
-rmem export --category "<category>" --namespace "<namespace>" -o "<path>"
+vault export --category "<category>" --namespace "<namespace>" -o "<path>"
 ```
 
 If no output path given, display the JSON. If path given, confirm the export location.

@@ -1,4 +1,4 @@
-"""Tests for roxabi_memory.embeddings — Embedder (S3 Slice 1)."""
+"""Tests for roxabi_vault.embeddings — Embedder (S3 Slice 1)."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ def test_import_error_when_fastembed_missing(monkeypatch):
 
     # Remove cached module
     mods_to_remove = [
-        k for k in sys.modules if k.startswith("roxabi_memory.embeddings")
+        k for k in sys.modules if k.startswith("roxabi_vault.embeddings")
     ]
     for m in mods_to_remove:
         del sys.modules[m]
@@ -79,11 +79,11 @@ def test_import_error_when_fastembed_missing(monkeypatch):
     monkeypatch.setattr("builtins.__import__", mock_import)
 
     with pytest.raises(ImportError, match="fastembed"):
-        importlib.import_module("roxabi_memory.embeddings")
+        importlib.import_module("roxabi_vault.embeddings")
 
     # Cleanup: restore module cache
     mods_to_remove = [
-        k for k in sys.modules if k.startswith("roxabi_memory.embeddings")
+        k for k in sys.modules if k.startswith("roxabi_vault.embeddings")
     ]
     for m in mods_to_remove:
         del sys.modules[m]

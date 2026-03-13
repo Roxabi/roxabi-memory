@@ -1,7 +1,7 @@
 # dev-core plugin configuration
 # Values here replace the old GH_PROJECT_ID / STATUS_FIELD_ID / etc. env vars.
 # 3-tier fallback: this file → process.env → gh CLI (github_repo only)
-github_repo: Roxabi/roxabi-memory
+github_repo: Roxabi/roxabi-vault
 gh_project_id: PVT_kwDOB8J6DM4BRFcn
 status_field_id: PVTSSF_lADOB8J6DM4BRFcnzg_BFKI
 size_field_id: PVTSSF_lADOB8J6DM4BRFcnzg_BFKs

@@ -1,9 +1,9 @@
-"""Tests for roxabi_memory.schema — migrate() and schema correctness."""
+"""Tests for roxabi_vault.schema — migrate() and schema correctness."""
 
 import sqlite3
 
 
-from roxabi_memory.schema import TARGET_VERSION, migrate
+from roxabi_vault.schema import TARGET_VERSION, migrate
 
 
 def make_conn() -> sqlite3.Connection:

@@ -1,6 +1,6 @@
 # Testing Standards
 
-Testing conventions and requirements for roxabi-memory.
+Testing conventions and requirements for roxabi-vault.
 
 ## Test Structure
 
@@ -53,11 +53,11 @@ async def test_async_example():
 
 ### CLI Tests
 
-Use Typer's `CliRunner` for CLI tests. Set `RMEM_DB` or pass `--db` with a temp file:
+Use Typer's `CliRunner` for CLI tests. Set `VAULT_DB` or pass `--db` with a temp file:
 
 ```python
 from typer.testing import CliRunner
-from roxabi_memory.cli import app
+from roxabi_vault.cli import app
 
 runner = CliRunner()
 

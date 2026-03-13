@@ -1,12 +1,12 @@
-"""Integration tests for the roxabi-memory CLI (roxabi_memory.cli)."""
+"""Integration tests for the roxabi-vault CLI (roxabi_vault.cli)."""
 
 import json
 
 import pytest
 from typer.testing import CliRunner
 
-from roxabi_memory.cli import app
-from roxabi_memory.db import MemoryDB
+from roxabi_vault.cli import app
+from roxabi_vault.db import MemoryDB
 
 runner = CliRunner()
 
@@ -423,7 +423,7 @@ def test_export_to_file(db_path: str, tmp_path) -> None:
 
 def test_db_env_var(db_path: str) -> None:
     # Arrange / Act — pass db path via environment variable instead of --db flag
-    result = runner.invoke(app, ["list"], env={"RMEM_DB": db_path})
+    result = runner.invoke(app, ["list"], env={"VAULT_DB": db_path})
 
     # Assert
     assert result.exit_code == 0
@@ -431,7 +431,7 @@ def test_db_env_var(db_path: str) -> None:
 
 
 def test_default_db_path(tmp_path, monkeypatch) -> None:
-    """When no --db flag and no RMEM_DB, ROXABI_VAULT_HOME is used as default."""
+    """When no --db flag and no VAULT_DB, ROXABI_VAULT_HOME is used as default."""
     vault_home = tmp_path / ".roxabi-vault"
     monkeypatch.setenv("ROXABI_VAULT_HOME", str(vault_home))
     # init creates the vault at the default path

@@ -8,6 +8,6 @@ import pytest
 @pytest.fixture(scope="session")
 def embedder():
     """Session-scoped Embedder — loads the ONNX model once for all tests."""
-    from roxabi_memory.embeddings import Embedder
+    from roxabi_vault.embeddings import Embedder
 
     return Embedder()

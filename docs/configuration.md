@@ -1,12 +1,12 @@
 # Configuration
 
-How roxabi-memory is configured — environment variables, CLI options, and Python API defaults.
+How roxabi-vault is configured — environment variables, CLI options, and Python API defaults.
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `RMEM_DB` | Yes (if not using `--db`) | — | Path to the SQLite database file. Used by the `rmem` CLI. |
+| `VAULT_DB` | Yes (if not using `--db`) | — | Path to the SQLite database file. Used by the `vault` CLI. |
 
 No other environment variables are used. The library itself takes the database path as a constructor argument.
 
@@ -16,18 +16,18 @@ Global options (set before any subcommand):
 
 | Option | Env fallback | Description |
 |---|---|---|
-| `--db PATH` | `RMEM_DB` | Path to the SQLite database file. Required. |
+| `--db PATH` | `VAULT_DB` | Path to the SQLite database file. Required. |
 | `--json` | — | Output results as JSON instead of Rich tables. |
 
 Example:
 
 ```bash
 # Via flag
-rmem --db ~/.roxabi/memory.db list
+vault --db ~/.roxabi/memory.db list
 
 # Via environment variable
-export RMEM_DB=~/.roxabi/memory.db
-rmem list
+export VAULT_DB=~/.roxabi/memory.db
+vault list
 ```
 
 ## Python API Defaults
@@ -56,7 +56,7 @@ Applied automatically on every connection:
 
 The library does not enforce a specific database location. Common conventions:
 
-- **CLI users**: `~/.roxabi/memory.db` (set via `RMEM_DB`)
+- **CLI users**: `~/.roxabi/memory.db` (set via `VAULT_DB`)
 - **Tests**: `":memory:"` (in-memory, no file created)
 - **Agents**: Path configured by the agent runtime
 
@@ -66,8 +66,8 @@ Installed via pip extras:
 
 ```bash
 # CLI support (typer + rich)
-pip install roxabi-memory[cli]
+pip install roxabi-vault[cli]
 
 # Embeddings support (not yet implemented)
-pip install roxabi-memory[embeddings]
+pip install roxabi-vault[embeddings]
 ```

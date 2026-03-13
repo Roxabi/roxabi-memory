@@ -1,6 +1,6 @@
 # Patterns
 
-Recurring patterns and conventions used in roxabi-memory.
+Recurring patterns and conventions used in roxabi-vault.
 
 ## Context Manager Protocol
 

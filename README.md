@@ -1,14 +1,14 @@
-# roxabi-memory
+# roxabi-vault
 
 Persistent, structured memory storage for Lyra agents and vault skills. Backed by SQLite with FTS5 full-text search.
 
-[![CI](https://github.com/Roxabi/roxabi-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/Roxabi/roxabi-memory/actions/workflows/ci.yml)
+[![CI](https://github.com/Roxabi/roxabi-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/Roxabi/roxabi-vault/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPI](https://img.shields.io/pypi/v/roxabi-memory)](https://pypi.org/project/roxabi-memory/)
+[![PyPI](https://img.shields.io/pypi/v/roxabi-vault)](https://pypi.org/project/roxabi-vault/)
 
 ## Why
 
-AI agents are stateless by default — every session starts cold. `roxabi-memory` gives Lyra and vault skills a persistent, searchable store so agents can recall past entries, surface relevant context via full-text search, and maintain isolated namespaces per agent without running a separate database server.
+AI agents are stateless by default — every session starts cold. `roxabi-vault` gives Lyra and vault skills a persistent, searchable store so agents can recall past entries, surface relevant context via full-text search, and maintain isolated namespaces per agent without running a separate database server.
 
 A single SQLite file, no infra to manage, and an API that works in both sync and async code.
 
@@ -29,7 +29,7 @@ A single SQLite file, no infra to manage, and an API that works in both sync and
 | Full-text search | FTS5/BM25 keyword search across all entries |
 | Sync API | `MemoryDB` (sqlite3) for standard Python code |
 | Async API | `AsyncMemoryDB` (aiosqlite) for async frameworks |
-| CLI | `rmem` command for shell-based CRUD and search |
+| CLI | `vault` command for shell-based CRUD and search |
 
 ## How it works
 
@@ -48,13 +48,13 @@ flowchart LR
 
 ```bash
 # Core library
-pip install roxabi-memory
+pip install roxabi-vault
 
 # With CLI support
-pip install roxabi-memory[cli]
+pip install roxabi-vault[cli]
 
 # With embeddings (not yet implemented)
-pip install roxabi-memory[embeddings]
+pip install roxabi-vault[embeddings]
 ```
 
 For development:
@@ -68,7 +68,7 @@ uv sync
 ### Python (sync)
 
 ```python
-from roxabi_memory import MemoryDB
+from roxabi_vault import MemoryDB
 
 with MemoryDB("memory.db") as db:
     entry = db.save_entry("Remember this", title="My note", category="general")
@@ -79,7 +79,7 @@ with MemoryDB("memory.db") as db:
 ### Python (async)
 
 ```python
-from roxabi_memory import AsyncMemoryDB
+from roxabi_vault import AsyncMemoryDB
 
 async with AsyncMemoryDB("memory.db") as db:
     entry_id = await db.save_entry("Remember this", title="My note")
@@ -89,15 +89,15 @@ async with AsyncMemoryDB("memory.db") as db:
 ### CLI
 
 ```bash
-export RMEM_DB=~/.roxabi/memory.db
+export VAULT_DB=~/.roxabi/memory.db
 
-rmem put "Remember this" --title "My note"
-rmem list
-rmem search "remember"
-rmem get 1
-rmem delete 1 -y
-rmem stats
-rmem export
+vault put "Remember this" --title "My note"
+vault list
+vault search "remember"
+vault get 1
+vault delete 1 -y
+vault stats
+vault export
 ```
 
 ## Documentation

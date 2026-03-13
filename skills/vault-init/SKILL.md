@@ -9,12 +9,12 @@ allowed-tools: Bash, Read
 
 First-time setup for the Roxabi vault. Creates the vault home directory, subdirectories, and initializes the SQLite+FTS5 database.
 
-All operations go through the `rmem` CLI (installed via `roxabi-memory[cli]`).
+All operations go through the `vault` CLI (installed via `roxabi-vault[cli]`).
 
 ## Phase 1 — Check Existing
 
 ```bash
-rmem --json stats 2>&1 || echo "VAULT_NEW"
+vault --json stats 2>&1 || echo "VAULT_NEW"
 ```
 
 If vault already exists, report current state and stop. Do not reinitialize.
@@ -22,7 +22,7 @@ If vault already exists, report current state and stop. Do not reinitialize.
 ## Phase 2 — Initialize
 
 ```bash
-rmem init
+vault init
 ```
 
 This creates:
@@ -33,7 +33,7 @@ This creates:
 ## Phase 3 — Verify
 
 ```bash
-rmem --json stats
+vault --json stats
 ```
 
 Confirm the vault is healthy and report:

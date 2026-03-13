@@ -1,4 +1,4 @@
-"""Tests for roxabi_memory.search — hybrid search + RRF (S3 Slice 2)."""
+"""Tests for roxabi_vault.search — hybrid search + RRF (S3 Slice 2)."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import struct
 
 import aiosqlite
 
-from roxabi_memory.schema import MIGRATIONS, SCHEMA_V1_SQL
-from roxabi_memory.search import _rrf_merge
+from roxabi_vault.schema import MIGRATIONS, SCHEMA_V1_SQL
+from roxabi_vault.search import _rrf_merge
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +84,7 @@ def test_rrf_merge_single_list_preserves_order():
 
 
 async def test_cosine_search_excludes_null_embeddings(tmp_path, embedder):
-    from roxabi_memory.search import _cosine_search
+    from roxabi_vault.search import _cosine_search
 
     db = await _setup_db(tmp_path / "test.db")
     emb = embedder.embed("hello world")
@@ -117,7 +117,7 @@ async def test_cosine_search_excludes_null_embeddings(tmp_path, embedder):
 
 
 async def test_hybrid_search_returns_merged_ranking(tmp_path, embedder):
-    from roxabi_memory.search import hybrid_search
+    from roxabi_vault.search import hybrid_search
 
     db = await _setup_db(tmp_path / "test.db")
 
@@ -152,7 +152,7 @@ async def test_hybrid_search_returns_merged_ranking(tmp_path, embedder):
 
 
 async def test_hybrid_search_respects_limit(tmp_path, embedder):
-    from roxabi_memory.search import hybrid_search
+    from roxabi_vault.search import hybrid_search
 
     db = await _setup_db(tmp_path / "test.db")
 
