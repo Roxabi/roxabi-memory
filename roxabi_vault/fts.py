@@ -9,8 +9,9 @@ import aiosqlite
 
 
 def _safe_query(q: str) -> str:
-    """Sanitise FTS5 query: strip *, ^, escape double-quotes."""
-    return '"' + re.sub(r"[*^]", "", q).replace('"', '""') + '"'
+    """Sanitise FTS5 query: tokenize and quote each term (AND semantics)."""
+    terms = re.sub(r'[*^"]+', " ", q).split()
+    return " ".join(f'"{t}"' for t in terms if t)
 
 
 _SEARCH_SQL = """
