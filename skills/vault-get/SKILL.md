@@ -7,26 +7,26 @@ allowed-tools: Bash
 
 # Vault Get
 
-Retrieve the full details of a specific vault entry by its ID.
+Retrieve full details of a vault entry by ID.
 
-## Phase 1 — Check Vault
+## P1 — Check
 
 ```bash
 vault stats 2>&1 || echo "VAULT_NOT_READY"
 ```
 
-If not ready, tell the user to run `vault-init` first. Stop here.
+¬ready → run `vault-init`; halt.
 
-## Phase 2 — Execute
+## P2 — Execute
+
+∄ ID → ask for it.
 
 ```bash
 vault get <id>
 ```
 
-If the user did not provide an ID, ask for it.
+## P3 — Report
 
-## Phase 3 — Report
-
-Display the full entry with all fields: id, title, content, category, type, namespace, metadata, created, and updated.
+All fields: id, title, content, category, type, namespace, metadata, created, updated.
 
 $ARGUMENTS

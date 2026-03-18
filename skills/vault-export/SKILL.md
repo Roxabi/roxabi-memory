@@ -7,26 +7,26 @@ allowed-tools: Bash
 
 # Vault Export
 
-Export entries from the Roxabi vault (`~/.roxabi-vault/vault.db`) as JSON.
+Export entries from `~/.roxabi-vault/vault.db` as JSON.
 
-## Phase 1 — Check Vault
+## P1 — Check
 
 ```bash
 vault stats 2>&1 || echo "VAULT_NOT_READY"
 ```
 
-If not ready, tell the user to run `vault-init` first. Stop here.
+¬ready → run `vault-init`; halt.
 
-## Phase 2 — Execute
+## P2 — Execute
 
 ```bash
 vault export --category "<category>" --namespace "<namespace>" -o "<path>"
 ```
 
-All filters are optional. If no output path was given, display the JSON inline. If a path was given, confirm the export location first.
+All filters optional. ∄ path → display JSON inline. ∃ path → confirm location.
 
-## Phase 3 — Report
+## P3 — Report
 
-Confirm the number of entries exported and the output location (or display the JSON).
+Confirm: entry count + output location (or display JSON).
 
 $ARGUMENTS
