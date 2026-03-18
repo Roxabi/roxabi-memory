@@ -1,5 +1,5 @@
 {
-  "name": "roxabi-memory-marketplace",
+  "name": "roxabi-vault-marketplace",
   "version": "1.0.0",
   "description": "Persistent memory for Roxabi agents — SQLite+FTS5 knowledge base with CLI, library, and vault skills.",
   "owner": {
@@ -8,9 +8,9 @@
   },
   "plugins": [
     {
-      "name": "roxabi-memory",
+      "name": "roxabi-vault",
       "description": "Persistent memory — SQLite+FTS5 knowledge base with CLI, library, and vault skills.",
-      "source": ".",
+      "source": "./",
       "category": "data"
     }
   ]

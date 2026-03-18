@@ -1,6 +1,6 @@
 # Backend Patterns
 
-Conventions and patterns for backend code in roxabi-memory.
+Conventions and patterns for backend code in roxabi-vault.
 
 ## Module Structure
 

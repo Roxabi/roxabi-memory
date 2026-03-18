@@ -1,17 +1,17 @@
 # Architecture
 
-Overview of roxabi-memory's architecture, modules, and design decisions.
+Overview of roxabi-vault's architecture, modules, and design decisions.
 
 ## High-Level Overview
 
-roxabi-memory is a Python library that provides persistent, structured memory storage backed by SQLite. It is designed as the memory backend for Lyra agents and vault skills.
+roxabi-vault is a Python library that provides persistent, structured memory storage backed by SQLite. It is designed as the memory backend for Lyra agents and vault skills.
 
 ```
 ┌─────────────────────────────────────────────────┐
 │                   Consumers                      │
 │  (Lyra agents, vault skills, CLI users)          │
 ├──────────┬──────────┬───────────────────────────-┤
-│  rmem    │ Namespaced│  Direct API               │
+│  vault    │ Namespaced│  Direct API               │
 │  CLI     │ Wrappers  │  (sync / async)           │
 │ (Typer)  │ (R/W)     │                           │
 ├──────────┴──────────┴───────────────────────────-┤
@@ -33,7 +33,7 @@ roxabi-memory is a Python library that provides persistent, structured memory st
 | `async_db.py` | Async `AsyncMemoryDB` class — same operations via `aiosqlite`, plus `upsert_session()` |
 | `fts.py` | Shared FTS5/BM25 search SQL and query sanitization (sync + async variants) |
 | `namespace.py` | `NamespacedReader` / `NamespacedWriter` — scoped access wrappers around `AsyncMemoryDB` |
-| `cli.py` | `rmem` CLI built with Typer + Rich — exposes all CRUD operations as shell commands |
+| `cli.py` | `vault` CLI built with Typer + Rich — exposes all CRUD operations as shell commands |
 
 ## Data Model
 

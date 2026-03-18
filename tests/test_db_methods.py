@@ -2,7 +2,7 @@
 
 import pytest
 
-from roxabi_memory.db import MemoryDB
+from roxabi_vault.db import MemoryDB
 
 
 @pytest.fixture

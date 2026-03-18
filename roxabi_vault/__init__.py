@@ -1,4 +1,4 @@
-"""roxabi-memory — persistent memory for Lyra agents and vault skills."""
+"""roxabi-vault — persistent memory for Lyra agents and vault skills."""
 
 from .async_db import AsyncMemoryDB
 from .db import MemoryDB, MemoryEntry

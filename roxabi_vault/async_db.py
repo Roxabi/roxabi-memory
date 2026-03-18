@@ -1,4 +1,4 @@
-"""Async (aiosqlite) interface for roxabi-memory."""
+"""Async (aiosqlite) interface for roxabi-vault."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ class AsyncMemoryDB:
             except ImportError as exc:
                 raise ImportError(
                     "Embeddings require fastembed and sqlite-vec: "
-                    "pip install roxabi-memory[embeddings]"
+                    "pip install roxabi-vault[embeddings]"
                 ) from exc
             # Store class for deferred init in connect() via run_in_executor
             self._embedder_cls = Embedder

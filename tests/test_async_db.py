@@ -1,4 +1,4 @@
-"""Tests for roxabi_memory.async_db — AsyncMemoryDB (S2)."""
+"""Tests for roxabi_vault.async_db — AsyncMemoryDB (S2)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from roxabi_memory.async_db import AsyncMemoryDB
+from roxabi_vault.async_db import AsyncMemoryDB
 
 
 @pytest.fixture
@@ -372,7 +372,7 @@ async def test_sqlite_vec_loaded(emb_db: AsyncMemoryDB) -> None:
 
 async def test_sqlite_vec_load_failure_raises_runtime_error(tmp_path, monkeypatch):
     """OperationalError during sqlite-vec load is re-raised as RuntimeError."""
-    import roxabi_memory.async_db as adb_mod
+    import roxabi_vault.async_db as adb_mod
 
     async def broken_load(self):
         raise Exception("mocked extension load failure")
@@ -396,7 +396,7 @@ def test_async_db_embeddings_import_error(tmp_path, monkeypatch):
 
     # Remove cached embeddings module
     mods_to_remove = [
-        k for k in sys.modules if k.startswith("roxabi_memory.embeddings")
+        k for k in sys.modules if k.startswith("roxabi_vault.embeddings")
     ]
     for m in mods_to_remove:
         del sys.modules[m]
@@ -411,20 +411,20 @@ def test_async_db_embeddings_import_error(tmp_path, monkeypatch):
     monkeypatch.setattr("builtins.__import__", mock_import)
 
     # Also remove the cached async_db module so it re-imports embeddings
-    adb_key = "roxabi_memory.async_db"
+    adb_key = "roxabi_vault.async_db"
     if adb_key in sys.modules:
         del sys.modules[adb_key]
 
     try:
-        mod = importlib.import_module("roxabi_memory.async_db")
+        mod = importlib.import_module("roxabi_vault.async_db")
         with pytest.raises(ImportError, match="fastembed|embeddings"):
             mod.AsyncMemoryDB(tmp_path / "import_fail.db", embeddings=True)
     finally:
         # Cleanup: restore module cache
         for k in list(sys.modules):
             if (
-                k.startswith("roxabi_memory.embeddings")
-                or k == "roxabi_memory.async_db"
+                k.startswith("roxabi_vault.embeddings")
+                or k == "roxabi_vault.async_db"
             ):
                 del sys.modules[k]
-        importlib.import_module("roxabi_memory.async_db")
+        importlib.import_module("roxabi_vault.async_db")

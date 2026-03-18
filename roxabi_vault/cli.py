@@ -1,4 +1,4 @@
-"""CLI for roxabi-memory — rmem command."""
+"""CLI for roxabi-vault — rmem command."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from rich.table import Table
 
 from .db import MemoryDB
 
-app = typer.Typer(help="roxabi-memory CLI — manage memory entries.")
+app = typer.Typer(help="roxabi-vault CLI — manage memory entries.")
 
 console = Console()
 err_console = Console(stderr=True)
@@ -51,14 +51,14 @@ def main(
     db: Annotated[
         Optional[str],
         typer.Option(
-            "--db", envvar="RMEM_DB", help="Path to the SQLite database file."
+            "--db", envvar="VAULT_DB", help="Path to the SQLite database file."
         ),
     ] = None,
     as_json: Annotated[
         bool, typer.Option("--json", is_flag=True, help="Output as JSON.")
     ] = False,
 ) -> None:
-    """roxabi-memory — a local SQLite memory store."""
+    """roxabi-vault — a local SQLite memory store."""
     state.db_path = Path(db) if db else _default_db_path()
     state.as_json = as_json
 

@@ -1,6 +1,6 @@
 # Code Review Standards
 
-Guidelines for reviewing code in roxabi-memory.
+Guidelines for reviewing code in roxabi-vault.
 
 ## Review Checklist
 

@@ -1,6 +1,6 @@
 # Contributing
 
-How to set up, develop, and contribute to roxabi-memory.
+How to set up, develop, and contribute to roxabi-vault.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ How to set up, develop, and contribute to roxabi-memory.
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd roxabi-memory
+cd roxabi-vault
 
 # Install dependencies (including dev tools)
 uv sync
@@ -73,15 +73,15 @@ docs(scope): documentation update
 ## Project Structure
 
 ```
-roxabi-memory/
-├── roxabi_memory/        # Library source
+roxabi-vault/
+├── roxabi_vault/        # Library source
 │   ├── __init__.py       # Public API exports
 │   ├── schema.py         # DDL + migrations
 │   ├── db.py             # Sync MemoryDB
 │   ├── async_db.py       # Async AsyncMemoryDB
 │   ├── fts.py            # FTS5 search logic
 │   ├── namespace.py      # Namespaced wrappers
-│   └── cli.py            # rmem CLI
+│   └── cli.py            # vault CLI
 ├── tests/                # Test suite
 ├── docs/                 # Documentation
 ├── artifacts/            # Frames, specs, plans

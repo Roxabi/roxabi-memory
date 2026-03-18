@@ -1,8 +1,8 @@
-"""Tests for roxabi_memory.db — MemoryDB and MemoryEntry."""
+"""Tests for roxabi_vault.db — MemoryDB and MemoryEntry."""
 
 import pytest
 
-from roxabi_memory.db import MemoryDB
+from roxabi_vault.db import MemoryDB
 
 
 @pytest.fixture

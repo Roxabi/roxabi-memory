@@ -1,4 +1,4 @@
-"""Schema definition and migration runner for roxabi-memory v2."""
+"""Schema definition and migration runner for roxabi-vault v2."""
 
 from __future__ import annotations
 
