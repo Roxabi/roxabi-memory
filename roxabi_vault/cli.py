@@ -15,6 +15,8 @@ from rich.table import Table
 from .db import MemoryDB
 
 app = typer.Typer(help="roxabi-vault CLI — manage memory entries.")
+tags_app = typer.Typer(help="Manage entry tags.")
+app.add_typer(tags_app, name="tags")
 
 console = Console()
 err_console = Console(stderr=True)
@@ -319,6 +321,7 @@ def stats() -> None:
     db_path = state.db_path
     with MemoryDB(db_path) as db:
         data = db.get_stats()
+        tag_count = len(db.all_tags())
 
     try:
         size_bytes = os.path.getsize(db_path)
@@ -328,6 +331,7 @@ def stats() -> None:
     if state.as_json:
         data["db_path"] = str(db_path)
         data["size_bytes"] = size_bytes
+        data["distinct_tags"] = tag_count
         typer.echo(json.dumps(data, indent=2))
         return
 
@@ -340,6 +344,7 @@ def stats() -> None:
     console.print(
         f"[bold]Categories:[/bold] {', '.join(data['categories']) or '(none)'}"
     )
+    console.print(f"[bold]Distinct tags:[/bold] {tag_count}")
 
 
 # ---------------------------------------------------------------------------
@@ -369,3 +374,91 @@ def export_entries(
         console.print(f"Exported {len(entries)} entries to {output}")
     else:
         typer.echo(data)
+
+
+# ---------------------------------------------------------------------------
+# tags subcommands
+# ---------------------------------------------------------------------------
+
+
+@tags_app.command("list")
+def tags_list(
+    limit: Annotated[
+        int, typer.Option("--limit", help="Max number of tags to show.")
+    ] = 50,
+) -> None:
+    """List all tags with their entry count."""
+    with MemoryDB(state.db_path) as db:
+        tags = db.all_tags()
+
+    tags = tags[:limit]
+
+    if state.as_json:
+        typer.echo(json.dumps([{"tag": t, "count": c} for t, c in tags], indent=2))
+        return
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("tag")
+    table.add_column("entries", justify="right")
+    for tag, count in tags:
+        table.add_row(tag, str(count))
+    console.print(table)
+
+
+@tags_app.command("set")
+def tags_set(
+    id: Annotated[str, typer.Argument(help="Entry ID.")],
+    tags: Annotated[str, typer.Argument(help="Comma-separated list of tags.")],
+) -> None:
+    """Set (replace) tags for an entry."""
+    try:
+        entry_id = int(id)
+    except ValueError:
+        err_console.print(f"Invalid ID: {id!r}")
+        raise typer.Exit(code=1)
+    tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+    with MemoryDB(state.db_path) as db:
+        db.set_tags(entry_id, tag_list)
+    typer.echo(f"Set {len(tag_list)} tags on entry {entry_id}: {', '.join(tag_list)}")
+
+
+@tags_app.command("get")
+def tags_get(
+    id: Annotated[str, typer.Argument(help="Entry ID.")],
+) -> None:
+    """Get tags for a specific entry."""
+    try:
+        entry_id = int(id)
+    except ValueError:
+        err_console.print(f"Invalid ID: {id!r}")
+        raise typer.Exit(code=1)
+    with MemoryDB(state.db_path) as db:
+        tags = db.get_tags(entry_id)
+
+    if state.as_json:
+        typer.echo(json.dumps(tags))
+        return
+    typer.echo(", ".join(tags) if tags else "(no tags)")
+
+
+@tags_app.command("search")
+def tags_search(
+    tag: Annotated[str, typer.Argument(help="Tag to search for.")],
+    limit: Annotated[
+        int, typer.Option("--limit", help="Max results.")
+    ] = 20,
+) -> None:
+    """Find entries with a specific tag."""
+    with MemoryDB(state.db_path) as db:
+        entries = db.entries_by_tag(tag, limit=limit)
+
+    if state.as_json:
+        typer.echo(json.dumps([dataclasses.asdict(e) for e in entries], indent=2))
+        return
+
+    table = Table(show_header=True, header_style="bold")
+    for col in ("id", "title", "category", "type", "created_at"):
+        table.add_column(col)
+    for e in entries:
+        table.add_row(str(e.id), e.title, e.category, e.type, e.created_at)
+    console.print(table)

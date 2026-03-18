@@ -157,6 +157,68 @@ class MemoryDB:
         ]
         return {"count": count, "namespaces": namespaces, "categories": categories}
 
+    # ------------------------------------------------------------------
+    # Tags
+    # ------------------------------------------------------------------
+
+    def set_tags(self, entry_id: int, tags: list[str]) -> None:
+        """Replace all tags for an entry (idempotent)."""
+        conn = self._conn_or_raise()
+        conn.execute("DELETE FROM entry_tags WHERE entry_id = ?", (entry_id,))
+        cleaned = [(entry_id, t.lower().strip()) for t in tags if t.strip()]
+        if cleaned:
+            conn.executemany(
+                "INSERT OR IGNORE INTO entry_tags (entry_id, tag) VALUES (?, ?)",
+                cleaned,
+            )
+        conn.commit()
+
+    def add_tags(self, entry_id: int, tags: list[str]) -> None:
+        """Add tags to an entry without removing existing ones."""
+        conn = self._conn_or_raise()
+        cleaned = [(entry_id, t.lower().strip()) for t in tags if t.strip()]
+        if cleaned:
+            conn.executemany(
+                "INSERT OR IGNORE INTO entry_tags (entry_id, tag) VALUES (?, ?)",
+                cleaned,
+            )
+            conn.commit()
+
+    def get_tags(self, entry_id: int) -> list[str]:
+        """Get all tags for a specific entry."""
+        conn = self._conn_or_raise()
+        rows = conn.execute(
+            "SELECT tag FROM entry_tags WHERE entry_id = ? ORDER BY tag",
+            (entry_id,),
+        ).fetchall()
+        return [r[0] for r in rows]
+
+    def entries_by_tag(self, tag: str, limit: int = 50) -> list[MemoryEntry]:
+        """Find entries with a specific tag."""
+        conn = self._conn_or_raise()
+        rows = conn.execute(
+            """SELECT e.* FROM entries e
+               JOIN entry_tags t ON t.entry_id = e.id
+               WHERE t.tag = ?
+               ORDER BY e.id LIMIT ?""",
+            (tag.lower().strip(), limit),
+        ).fetchall()
+        return [self._row(r) for r in rows]
+
+    def all_tags(self) -> list[tuple[str, int]]:
+        """Return all tags with entry count, sorted by frequency desc."""
+        conn = self._conn_or_raise()
+        rows = conn.execute(
+            "SELECT tag, COUNT(*) FROM entry_tags GROUP BY tag ORDER BY COUNT(*) DESC"
+        ).fetchall()
+        return [(r[0], r[1]) for r in rows]
+
+    def tagged_entry_ids(self) -> set[int]:
+        """Return set of entry IDs that have at least one tag."""
+        conn = self._conn_or_raise()
+        rows = conn.execute("SELECT DISTINCT entry_id FROM entry_tags").fetchall()
+        return {r[0] for r in rows}
+
     def _row(self, row: sqlite3.Row) -> MemoryEntry:
         return MemoryEntry(
             id=row["id"],
