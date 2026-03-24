@@ -7,34 +7,27 @@ allowed-tools: Bash
 
 # Vault Search
 
-Search the Roxabi vault (`~/.roxabi-vault/vault.db`) using full-text search.
+FTS5 full-text search over `~/.roxabi-vault/vault.db`.
 
-## Phase 1 — Check Vault
+## P1 — Check
 
 ```bash
 vault stats 2>&1 || echo "VAULT_NOT_READY"
 ```
 
-If not ready, tell the user to run `vault-init` first. Stop here.
+¬ready → run `vault-init`; halt.
 
-## Phase 2 — Execute
+## P2 — Execute
 
 ```bash
 vault search "<query>" --limit <N>
 ```
 
-Default limit: 10. Use the user's query as-is.
+Default limit: 10.
 
-## Phase 3 — Report
+## P3 — Report
 
-Present results as a readable table:
-
-```
-ID  | Category  | Type     | Title                  | Created
-----|-----------|----------|------------------------|-------------------
-1   | learnings | learning | SQLite WAL advantages  | 2024-01-15 10:30
-```
-
-If no results, say so clearly and suggest broadening the query.
+Table: ID | Category | Type | Title | Created.
+¬results → say so; suggest broadening query.
 
 $ARGUMENTS

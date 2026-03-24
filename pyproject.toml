@@ -21,6 +21,7 @@ packages = ["roxabi_vault"]
 
 [dependency-groups]
 dev = [
+    "anthropic>=0.85.0",
     "pip-licenses>=5.5.1",
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",

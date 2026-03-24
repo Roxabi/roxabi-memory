@@ -7,44 +7,30 @@ allowed-tools: Bash, Read
 
 # Vault Init
 
-First-time setup for the Roxabi vault. Creates the vault home directory, subdirectories, and initializes the SQLite+FTS5 database.
+CLI: `vault` (via `roxabi-vault[cli]`). DB: `~/.roxabi-vault/vault.db`.
 
-All operations go through the `vault` CLI (installed via `roxabi-vault[cli]`).
-
-## Phase 1 — Check Existing
+## P1 — Check Existing
 
 ```bash
 vault --json stats 2>&1 || echo "VAULT_NEW"
 ```
 
-If vault already exists, report current state and stop. Do not reinitialize.
+vault ∃ → report state; halt. ¬reinit.
 
-## Phase 2 — Initialize
+## P2 — Initialize
 
 ```bash
 vault init
 ```
 
-This creates:
-- `~/.roxabi-vault/` with 700 permissions (or `$ROXABI_VAULT_HOME`)
-- Subdirectories: `config/`, `content/`, `ideas/`, `learnings/`, `backup/`
-- `vault.db` with schema v2, FTS5 index, and WAL mode
+Creates: `~/.roxabi-vault/` (700 | `$ROXABI_VAULT_HOME`); dirs: `config/ content/ ideas/ learnings/ backup/`; `vault.db` (schema v2, FTS5, WAL).
 
-## Phase 3 — Verify
+## P3 — Verify
 
 ```bash
 vault --json stats
 ```
 
-Confirm the vault is healthy and report:
-
-```
-Vault Initialized
-  Location:    ~/.roxabi-vault/
-  Database:    vault.db (SQLite + FTS5)
-  WAL mode:    enabled
-  Directories: config/, content/, ideas/, learnings/, backup/
-  Status:      ready
-```
+Confirm healthy; report: location, DB (SQLite+FTS5), WAL=on, dirs, status=ready.
 
 $ARGUMENTS

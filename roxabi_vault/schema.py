@@ -1,4 +1,4 @@
-"""Schema definition and migration runner for roxabi-vault v2."""
+"""Schema definition and migration runner for roxabi-vault v3."""
 
 from __future__ import annotations
 
@@ -41,6 +41,15 @@ MIGRATIONS: dict[int, list[str]] = {
         "ALTER TABLE entries ADD COLUMN embedding BLOB",
         "ALTER TABLE entries ADD COLUMN source_turns TEXT",
         "ALTER TABLE entries ADD COLUMN event_date TEXT",
+    ],
+    3: [
+        """CREATE TABLE IF NOT EXISTS entry_tags (
+            entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+            tag TEXT NOT NULL,
+            PRIMARY KEY (entry_id, tag)
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_entry_tags_tag ON entry_tags(tag)",
+        "CREATE INDEX IF NOT EXISTS idx_entry_tags_entry ON entry_tags(entry_id)",
     ],
 }
 

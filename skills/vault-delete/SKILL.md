@@ -7,38 +7,36 @@ allowed-tools: Bash
 
 # Vault Delete
 
-Remove an entry from the Roxabi vault (`~/.roxabi-vault/vault.db`).
+Remove an entry from `~/.roxabi-vault/vault.db`.
 
-## Phase 1 — Check Vault
+## P1 — Check
 
 ```bash
 vault stats 2>&1 || echo "VAULT_NOT_READY"
 ```
 
-If not ready, tell the user to run `vault-init` first. Stop here.
+¬ready → run `vault-init`; halt.
 
-## Phase 2 — Show Entry
+## P2 — Show Entry
 
-Fetch and display the entry before deleting:
+∄ ID → ask. ∄ entry → say so; halt.
 
 ```bash
 vault get <id>
 ```
 
-If the user did not provide an ID, ask for it. If the entry does not exist, say so and stop.
+## P3 — Confirm
 
-## Phase 3 — Confirm
+`AskUserQuestion` with entry title + ID before proceeding.
 
-Ask for confirmation using `AskUserQuestion` before proceeding. Show the entry title and ID in the question.
-
-## Phase 4 — Execute
+## P4 — Execute
 
 ```bash
 vault delete <id>
 ```
 
-## Phase 5 — Report
+## P5 — Report
 
-Confirm the entry was deleted by ID and title.
+Confirm deletion by ID and title.
 
 $ARGUMENTS

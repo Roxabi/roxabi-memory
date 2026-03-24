@@ -7,26 +7,26 @@ allowed-tools: Bash
 
 # Vault List
 
-Browse entries in the Roxabi vault (`~/.roxabi-vault/vault.db`).
+Browse entries in `~/.roxabi-vault/vault.db`.
 
-## Phase 1 — Check Vault
+## P1 — Check
 
 ```bash
 vault stats 2>&1 || echo "VAULT_NOT_READY"
 ```
 
-If not ready, tell the user to run `vault-init` first. Stop here.
+¬ready → run `vault-init`; halt.
 
-## Phase 2 — Execute
+## P2 — Execute
 
 ```bash
 vault list --category "<category>" --namespace "<namespace>" --limit <N>
 ```
 
-All filters are optional. If the user specifies no filters, list all entries (default limit: 20).
+All filters optional. ¬filters → list all (default limit: 20).
 
-## Phase 3 — Report
+## P3 — Report
 
-Present results as a table with id, title, category, type, and created date. If no entries match, say so.
+Table: id, title, category, type, created. ¬matches → say so.
 
 $ARGUMENTS

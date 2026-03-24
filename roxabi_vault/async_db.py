@@ -237,6 +237,66 @@ class AsyncMemoryDB:
         except (aiosqlite.OperationalError, ValueError, OSError):
             logger.warning("Backfill failed for entries %s", entry_ids, exc_info=True)
 
+    # ------------------------------------------------------------------
+    # Tags
+    # ------------------------------------------------------------------
+
+    async def set_tags(self, entry_id: int, tags: list[str]) -> None:
+        """Replace all tags for an entry (idempotent)."""
+        db = self._db_or_raise()
+        await db.execute("DELETE FROM entry_tags WHERE entry_id = ?", (entry_id,))
+        cleaned = [(entry_id, t.lower().strip()) for t in tags if t.strip()]
+        if cleaned:
+            await db.executemany(
+                "INSERT OR IGNORE INTO entry_tags (entry_id, tag) VALUES (?, ?)",
+                cleaned,
+            )
+        await db.commit()
+
+    async def add_tags(self, entry_id: int, tags: list[str]) -> None:
+        """Add tags to an entry without removing existing ones."""
+        db = self._db_or_raise()
+        cleaned = [(entry_id, t.lower().strip()) for t in tags if t.strip()]
+        if cleaned:
+            await db.executemany(
+                "INSERT OR IGNORE INTO entry_tags (entry_id, tag) VALUES (?, ?)",
+                cleaned,
+            )
+            await db.commit()
+
+    async def get_tags(self, entry_id: int) -> list[str]:
+        """Get all tags for a specific entry."""
+        db = self._db_or_raise()
+        async with db.execute(
+            "SELECT tag FROM entry_tags WHERE entry_id = ? ORDER BY tag",
+            (entry_id,),
+        ) as cur:
+            rows = await cur.fetchall()
+        return [r[0] for r in rows]
+
+    async def entries_by_tag(self, tag: str, limit: int = 50) -> list[dict]:
+        """Find entries with a specific tag. Returns raw dicts."""
+        db = self._db_or_raise()
+        async with db.execute(
+            """SELECT e.id, e.category, e.type, e.title, e.namespace, e.created_at
+               FROM entries e
+               JOIN entry_tags t ON t.entry_id = e.id
+               WHERE t.tag = ?
+               ORDER BY e.id LIMIT ?""",
+            (tag.lower().strip(), limit),
+        ) as cur:
+            rows = await cur.fetchall()
+        return [dict(r) for r in rows]
+
+    async def all_tags(self) -> list[tuple[str, int]]:
+        """Return all tags with entry count, sorted by frequency desc."""
+        db = self._db_or_raise()
+        async with db.execute(
+            "SELECT tag, COUNT(*) FROM entry_tags GROUP BY tag ORDER BY COUNT(*) DESC"
+        ) as cur:
+            rows = await cur.fetchall()
+        return [(r[0], r[1]) for r in rows]
+
     async def close(self) -> None:
         # Cancel any in-flight backfill tasks before closing the connection.
         for task in self._background_tasks:

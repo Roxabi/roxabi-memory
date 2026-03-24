@@ -1,14 +1,15 @@
 {
   "allowlist": [
-    "packaging",
-    "typing_extensions",
     "fastembed",
     "numpy",
+    "packaging",
     "pillow",
     "protobuf",
     "py_rust_stemmers",
+    "sniffio",
     "sqlite-vec",
-    "tqdm"
+    "tqdm",
+    "typing_extensions"
   ],
   "overrides": {}
 }
