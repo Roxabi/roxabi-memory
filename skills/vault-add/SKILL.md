@@ -7,7 +7,9 @@ allowed-tools: Bash
 
 # Vault Add
 
-Store a new entry in `~/.roxabi-vault/vault.db`.
+Let: DB=`~/.roxabi-vault/vault.db`
+
+Store a new entry in DB.
 
 ## P1 — Check
 

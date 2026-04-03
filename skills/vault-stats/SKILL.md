@@ -7,7 +7,9 @@ allowed-tools: Bash
 
 # Vault Stats
 
-Show statistics for `~/.roxabi-vault/vault.db`.
+Let: DB=`~/.roxabi-vault/vault.db`
+
+Show statistics for DB.
 
 ## P1 — Execute
 

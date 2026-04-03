@@ -7,7 +7,9 @@ allowed-tools: Bash
 
 # Vault Get
 
-Retrieve full details of a vault entry by ID.
+Let: DB=`~/.roxabi-vault/vault.db`
+
+Retrieve full details of a vault entry by ID from DB.
 
 ## P1 — Check
 

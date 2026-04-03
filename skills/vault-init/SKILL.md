@@ -7,7 +7,9 @@ allowed-tools: Bash, Read
 
 # Vault Init
 
-CLI: `vault` (via `roxabi-vault[cli]`). DB: `~/.roxabi-vault/vault.db`.
+Let: DB=`~/.roxabi-vault/vault.db` | H=`~/.roxabi-vault/`
+
+CLI: `vault` (via `roxabi-vault[cli]`). DB: DB.
 
 ## P1 — Check Existing
 
@@ -23,7 +25,7 @@ vault ∃ → report state; halt. ¬reinit.
 vault init
 ```
 
-Creates: `~/.roxabi-vault/` (700 | `$ROXABI_VAULT_HOME`); dirs: `config/ content/ ideas/ learnings/ backup/`; `vault.db` (schema v2, FTS5, WAL).
+Creates: H (700 | `$ROXABI_VAULT_HOME`); dirs: `config/ content/ ideas/ learnings/ backup/`; `vault.db` (schema v2, FTS5, WAL).
 
 ## P3 — Verify
 

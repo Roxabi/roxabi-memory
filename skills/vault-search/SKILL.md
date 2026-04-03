@@ -7,7 +7,9 @@ allowed-tools: Bash
 
 # Vault Search
 
-FTS5 full-text search over `~/.roxabi-vault/vault.db`.
+Let: DB=`~/.roxabi-vault/vault.db`
+
+FTS5 full-text search over DB.
 
 ## P1 — Check
 

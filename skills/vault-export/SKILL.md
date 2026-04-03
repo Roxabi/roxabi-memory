@@ -7,7 +7,9 @@ allowed-tools: Bash
 
 # Vault Export
 
-Export entries from `~/.roxabi-vault/vault.db` as JSON.
+Let: DB=`~/.roxabi-vault/vault.db`
+
+Export entries from DB as JSON.
 
 ## P1 — Check
 

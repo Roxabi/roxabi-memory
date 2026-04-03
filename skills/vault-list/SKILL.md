@@ -7,7 +7,9 @@ allowed-tools: Bash
 
 # Vault List
 
-Browse entries in `~/.roxabi-vault/vault.db`.
+Let: DB=`~/.roxabi-vault/vault.db`
+
+Browse entries in DB.
 
 ## P1 — Check
 

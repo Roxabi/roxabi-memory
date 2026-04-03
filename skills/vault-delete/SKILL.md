@@ -7,7 +7,9 @@ allowed-tools: Bash
 
 # Vault Delete
 
-Remove an entry from `~/.roxabi-vault/vault.db`.
+Let: DB=`~/.roxabi-vault/vault.db`
+
+Remove an entry from DB.
 
 ## P1 — Check
 
