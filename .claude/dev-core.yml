@@ -1,11 +1,10 @@
 # dev-core plugin configuration
-# Values here replace the old GH_PROJECT_ID / STATUS_FIELD_ID / etc. env vars.
 # 3-tier fallback: this file → process.env → gh CLI (github_repo only)
 github_repo: Roxabi/roxabi-vault
-gh_project_id: PVT_kwDOB8J6DM4BRFcn
-status_field_id: PVTSSF_lADOB8J6DM4BRFcnzg_BFKI
-size_field_id: PVTSSF_lADOB8J6DM4BRFcnzg_BFKs
-priority_field_id: PVTSSF_lADOB8J6DM4BRFcnzg_BFKw
-status_options_json: '{"Backlog":"fc4b0c1c","Analysis":"ecaba6c2","Specs":"0dd894ad","In Progress":"81ad750d","Review":"54252902","Done":"9e1f11ce"}'
-size_options_json: '{"XS":"022fd105","S":"98fa529f","M":"62b7ea8f","L":"9bcac077","XL":"f701e733"}'
-priority_options_json: '{"P0 - Urgent":"4adb8165","P1 - High":"0ccecc2d","P2 - Medium":"0191eecb","P3 - Low":"a93dee03"}'
+gh_project_id: PVT_kwDOB8J6DM4BTXc0
+status_field_id: PVTSSF_lADOB8J6DM4BTXc0zhAoON0
+size_field_id: PVTSSF_lADOB8J6DM4BTXc0zhAoOPA
+priority_field_id: PVTSSF_lADOB8J6DM4BTXc0zhAoOPs
+status_options_json: '{"Backlog":"c563258d","Analysis":"f3c651cb","Specs":"0a07cc78","In Progress":"34d9614b","Review":"2bb322c4","Done":"00000e44"}'
+size_options_json: '{"XS":"1a4b511a","S":"8313f80f","M":"a6a2de9b","L":"5fe0e9c2","XL":"5ac208c5"}'
+priority_options_json: '{"P0 - Urgent":"27197990","P1 - High":"5d76fe79","P2 - Medium":"a538836a","P3 - Low":"993749e6"}'
