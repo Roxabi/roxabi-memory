@@ -4,3 +4,4 @@ __pycache__/
 .env
 .claude/dev-core.yml
 .claude/dev-core.md
+.claude/stack.yml
