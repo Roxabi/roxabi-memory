@@ -1,10 +1,14 @@
 """NATS subscriber for vault write events."""
 
+import logging
 import os
+from typing import Any
 
 from roxabi_nats import NatsAdapterBase
 
 from .async_db import AsyncMemoryDB
+
+logger = logging.getLogger(__name__)
 
 
 class NatsSubscriber(NatsAdapterBase):
@@ -20,16 +24,25 @@ class NatsSubscriber(NatsAdapterBase):
             schema_version=1,
         )
 
-    async def handle(self, msg, payload: dict) -> None:
+    async def handle(self, msg: Any, payload: dict) -> None:
         """Process vault write message, store in DB."""
-        await self._db.save_entry(
-            content=payload["content"],
-            title=payload.get("name", ""),
-            category=payload.get("category", "general"),
-            metadata=payload.get("metadata"),
-            type="note",
-            namespace="vault",
-        )
+        # Validate required fields
+        if "content" not in payload:
+            logger.error("Missing required 'content' key in payload: %s", payload)
+            return
+
+        # Store entry with error handling
+        try:
+            await self._db.save_entry(
+                content=payload["content"],
+                title=payload.get("name", ""),
+                category=payload.get("category", "general"),
+                metadata=payload.get("metadata"),
+                type="note",
+                namespace="vault",
+            )
+        except Exception:
+            logger.exception("Failed to save entry for payload: %s", payload)
 
     async def run(self, nats_url: str | None = None) -> None:
         """Connect to NATS and start subscription loop."""

@@ -90,9 +90,9 @@ def nats_server():
 
 
 @pytest.mark.asyncio
-async def test_subscriber_connects_to_nats(nats_server, tmp_path):
+async def test_subscriber_connects_to_nats(nats_server):
     """Test that NatsSubscriber can connect to a real NATS server."""
-    db_path = tmp_path / "test.db"
+    db_path = ":memory:"
 
     async with AsyncMemoryDB(db_path) as db:
         subscriber = NatsSubscriber(db)
@@ -114,9 +114,9 @@ async def test_subscriber_connects_to_nats(nats_server, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_subscriber_receives_and_stores_message(nats_server, tmp_path):
+async def test_subscriber_receives_and_stores_message(nats_server):
     """Test full flow: connect, receive message, store in DB."""
-    db_path = tmp_path / "test.db"
+    db_path = ":memory:"
     nats_url = nats_server
 
     async with AsyncMemoryDB(db_path) as db:
