@@ -20,11 +20,13 @@ __all__ = [
     # S3 — embeddings (optional)
     "Embedder",
     "hybrid_search",
+    # S4 — NATS subscriber (optional)
+    "NatsSubscriber",
 ]
 
 
 def __getattr__(name: str):
-    """Lazy import for optional embeddings symbols."""
+    """Lazy import for optional embeddings and NATS symbols."""
     if name == "Embedder":
         from .embeddings import Embedder
 
@@ -33,4 +35,8 @@ def __getattr__(name: str):
         from .search import hybrid_search
 
         return hybrid_search
+    if name == "NatsSubscriber":
+        from .nats import NatsSubscriber
+
+        return NatsSubscriber
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

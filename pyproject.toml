@@ -1,9 +1,9 @@
 [project]
 name = "roxabi-vault"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
-dependencies = ["aiosqlite>=0.22.1"]
+dependencies = ["aiosqlite>=0.22.1", "roxabi-nats>=0.1.0"]
 
 [project.optional-dependencies]
 cli = ["typer>=0.24.1", "rich>=15.0.0"]
@@ -27,6 +27,9 @@ dev = [
     "pytest-asyncio>=1.3.0",
     "ruff>=0.15.10",
 ]
+
+[tool.uv.sources]
+roxabi-nats = { git = "https://github.com/Roxabi/lyra.git", subdirectory = "packages/roxabi-nats", tag = "roxabi-nats/v0.1.0" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
