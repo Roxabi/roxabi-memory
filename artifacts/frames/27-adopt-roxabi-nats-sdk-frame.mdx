@@ -1,0 +1,45 @@
+---
+title: feat(nats): adopt roxabi-nats v0.1.0 SDK as NATS transport
+issue: 27
+status: approved
+tier: F-lite
+date: 2026-04-15
+---
+
+## Problem
+
+Issue #24 describes NATS subscriber mode in the abstract — consume vault writes from a bus rather than tight-coupled synchronous calls. Lyra has since extracted a shared NATS transport SDK (`roxabi-nats`) that standardizes connection handling, contract versioning, and nkey auth.
+
+The vault currently lacks a NATS integration. To participate in Lyra's event bus architecture (Roxabi/lyra#703, #704), the vault needs to adopt `roxabi-nats` as its transport layer and subscribe to vault write events.
+
+## Who
+
+- **Primary:** Vault service — consumes vault write events from NATS bus, decouples from synchronous calls
+- **Secondary:** Lyra hub — publishes vault writes to NATS (Roxabi/lyra#703), expects subscribers with proper contract versioning
+
+## Constraints
+
+- **Git dependency, tag-pinned:** `roxabi-nats/v0.1.0` from Lyra monorepo
+- **Public API contract only:** Only import names in `roxabi_nats.__all__`; `_`-prefixed submodules are unstable
+- **nkey auth + subject ACL:** Follow Lyra's #706 infrastructure for per-role nkey and subject patterns
+- **Contract version check:** Validate `CONTRACT_VERSION` on inbound messages
+- **No direct `nats.connect()`:** Use `nats_connect` helper from SDK
+
+## Out of Scope
+
+- Publishing vault writes (Lyra-side responsibility per #703)
+- Importing `_`-prefixed SDK internals
+- Modifying roxabi-nats SDK (use as-is)
+- WebSocket or HTTP fallback transports
+
+## Complexity
+
+**Tier: F-lite** — Clear integration scope, single domain (backend/infra), established SDK with documented API, concrete acceptance criteria.
+
+### Signals Observed
+
+- Single domain: backend/infra integration
+- Clear scope: install SDK, build subscriber, validate integration
+- ¬new arch: adopting existing SDK pattern (ADR-044, ADR-045)
+- ¬unknowns: SDK is built, documented, and released
+- Concrete acceptance criteria provided in issue
