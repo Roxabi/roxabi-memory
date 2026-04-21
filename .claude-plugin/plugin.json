@@ -1,6 +1,6 @@
 {
   "name": "roxabi-vault",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Persistent memory — SQLite+FTS5 knowledge base with CLI, library, and vault skills.",
   "author": {
     "name": "Roxabi"
