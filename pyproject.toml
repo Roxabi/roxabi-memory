@@ -6,7 +6,7 @@ license = "MIT"
 dependencies = ["aiosqlite>=0.22.1", "roxabi-nats>=0.1.0"]
 
 [project.optional-dependencies]
-cli = ["typer>=0.24.1", "rich>=15.0.0"]
+cli = ["typer>=0.25.0", "rich>=15.0.0"]
 embeddings = ["fastembed>=0.8.0", "sqlite-vec>=0.1.9"]
 
 [project.scripts]
