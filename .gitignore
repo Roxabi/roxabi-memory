@@ -5,3 +5,5 @@ __pycache__/
 .claude/dev-core.yml
 .claude/dev-core.md
 .claude/stack.yml
+# CocoIndex Code (ccc)
+/.cocoindex_code/
